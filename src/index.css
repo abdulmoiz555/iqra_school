@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@media print {
+  /* Hide all background content when printing modal/receipt */
+  body.print-active #root > div > header,
+  body.print-active #root > div > div > aside,
+  body.print-active #root > div > div > main,
+  header,
+  aside,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-only-container {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 4mm 5mm;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Iqra School and College Garhi Kapura Mardan",
+  "description": "Comprehensive School Management Portal and Website for Iqra School and College Garhi Kapura Mardan. Features include #IQRA_TALENT_AWARD_CEREMONY Gallery, Video Showcase, Watermarked Half-A4 Fee Invoices, Sibling Concession %, and Sir Imran Super Admin Role Permissions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
