@@ -36,9 +36,23 @@ export const FeesHub: React.FC = () => {
     addFeeType,
     students,
     classes,
+    parents,
     settings,
     currentUser,
   } = useApp();
+
+  const isParent = currentUser.role === 'Parent';
+  const isStudent = currentUser.role === 'Student';
+  const parentRecord = parents.find((p) => p.id === currentUser.linkedId || p.email === currentUser.email);
+  const myChildren = students.filter(
+    (s) => parentRecord?.studentIds?.includes(s.id) || s.parentId === parentRecord?.id
+  );
+  const myChildIds = new Set(myChildren.map((c) => c.id));
+  const myPayments = feePayments.filter((p) =>
+    isParent ? myChildIds.has(p.studentId) : isStudent ? p.studentId === currentUser.linkedId : true
+  );
+  const myTotalPendingBalance = myPayments.reduce((acc, p) => acc + p.balanceAmount, 0);
+  const myTotalPaid = myPayments.reduce((acc, p) => acc + p.paidAmount, 0);
 
   const [activeTab, setActiveTab] = useState<'receipts' | 'arrears' | 'structures' | 'discounts' | 'expenses'>('receipts');
   const [isCollectModalOpen, setIsCollectModalOpen] = useState(false);

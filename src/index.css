@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
 @media print {
   /* Hide all background content when printing modal/receipt */
   body.print-active #root > div > header,

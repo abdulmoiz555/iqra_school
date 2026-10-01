@@ -37,21 +37,25 @@ interface NavItem {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { activeTab, setActiveTab, currentUser, settings, students, feePayments, notices } = useApp();
+  const { activeTab, setActiveTab, currentUser, settings, students, feePayments, notices, parents } = useApp();
+
+  const isParent = currentUser.role === 'Parent';
+  const parentRecord = parents.find((p) => p.id === currentUser.linkedId || p.email === currentUser.email);
+  const myChildren = students.filter((s) => parentRecord?.studentIds?.includes(s.id) || s.parentId === parentRecord?.id);
 
   const navItems: NavItem[] = [
     {
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist', 'Parent', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist', 'Student'],
     },
     {
       id: 'students',
-      label: currentUser.role === 'Student' ? 'My Profile & ID' : currentUser.role === 'Parent' ? 'My Children' : 'Students',
+      label: currentUser.role === 'Student' ? 'My Profile & ID' : isParent ? 'My Children' : 'Students',
       icon: GraduationCap,
       allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Receptionist', 'Parent', 'Student'],
-      badge: `${students.length}`,
+      badge: isParent ? `${myChildren.length}` : `${students.length}`,
     },
     {
       id: 'parents',
@@ -75,24 +79,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'academics',
       label: 'Academics & Timetable',
       icon: BookOpen,
-      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Parent', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Student'],
     },
     {
       id: 'attendance',
-      label: 'Attendance',
+      label: isParent ? "Child's Attendance" : 'Attendance',
       icon: CalendarCheck,
       allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Parent', 'Student'],
     },
     {
       id: 'fees',
-      label: currentUser.role === 'Student' || currentUser.role === 'Parent' ? 'Fees & Receipts' : 'Fees & Finance',
+      label: isParent ? 'Remaining Fees & Dues' : currentUser.role === 'Student' ? 'My Fee Vouchers' : 'Fees & Finance',
       icon: CreditCard,
       allowedRoles: ['Super Admin', 'Admin', 'Accountant', 'Receptionist', 'Parent', 'Student'],
-      badge: feePayments.length > 0 ? `${feePayments.length}` : undefined,
+      badge: isParent
+        ? `${feePayments.filter((p) => myChildren.some((c) => c.id === p.studentId)).length}`
+        : feePayments.length > 0 ? `${feePayments.length}` : undefined,
     },
     {
       id: 'examinations',
-      label: currentUser.role === 'Student' || currentUser.role === 'Parent' ? 'Exam Results' : 'Examinations & Marks',
+      label: isParent ? "Child's Exam Marks" : currentUser.role === 'Student' ? 'Exam Results' : 'Examinations & Marks',
       icon: Award,
       allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Parent', 'Student'],
     },
@@ -106,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'transport',
       label: 'Transport',
       icon: Bus,
-      allowedRoles: ['Super Admin', 'Admin', 'Receptionist', 'Parent', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Receptionist', 'Student'],
     },
     {
       id: 'inventory',
@@ -124,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'communication',
       label: 'Notices & Messages',
       icon: Megaphone,
-      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist', 'Parent', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist', 'Student'],
       badge: `${notices.length}`,
     },
     {

@@ -377,6 +377,9 @@ export interface TransportRoute {
   dropLocation: string;
   fareMonthly: number;
   vehicleId: string;
+  stops?: string[];
+  assignedClassIds?: string[];
+  notes?: string;
 }
 
 export interface InventoryItem {

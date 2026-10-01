@@ -177,6 +177,14 @@ interface AppContextType {
   vehicles: Vehicle[];
   drivers: Driver[];
   routes: TransportRoute[];
+  addVehicle: (v: Omit<Vehicle, 'id'>) => void;
+  updateVehicle: (id: string, v: Partial<Vehicle>) => void;
+  deleteVehicle: (id: string) => void;
+  addRoute: (r: Omit<TransportRoute, 'id'>) => void;
+  updateRoute: (id: string, r: Partial<TransportRoute>) => void;
+  deleteRoute: (id: string) => void;
+  addDriver: (d: Omit<Driver, 'id'>) => void;
+  updateDriver: (id: string, d: Partial<Driver>) => void;
 
   inventory: InventoryItem[];
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
@@ -227,8 +235,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
     }
     localStorage.setItem('sms_dark_mode', String(darkMode));
   }, [darkMode]);
@@ -711,6 +721,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logAction(`Received Returned Library Book Issue ID: ${issueId}`, 'Library', issueId);
   };
 
+  // Transport Fleet & Routes
+  const addVehicle = (v: Omit<Vehicle, 'id'>) => {
+    const newV: Vehicle = { ...v, id: `veh-${Date.now()}` };
+    setVehicles((prev) => [...prev, newV]);
+    logAction(`Added Fleet Vehicle: ${v.vehicleNumber} (${v.vehicleType})`, 'Transport', newV.id);
+  };
+
+  const updateVehicle = (id: string, v: Partial<Vehicle>) => {
+    setVehicles((prev) => prev.map((item) => (item.id === id ? { ...item, ...v } : item)));
+    logAction(`Updated Fleet Vehicle ID: ${id}`, 'Transport', id);
+  };
+
+  const deleteVehicle = (id: string) => {
+    setVehicles((prev) => prev.filter((item) => item.id !== id));
+    logAction(`Removed Fleet Vehicle ID: ${id}`, 'Transport', id);
+  };
+
+  const addRoute = (r: Omit<TransportRoute, 'id'>) => {
+    const newR: TransportRoute = { ...r, id: `rt-${Date.now()}` };
+    setRoutes((prev) => [...prev, newR]);
+    logAction(`Created Transit Route: ${r.name}`, 'Transport', newR.id);
+  };
+
+  const updateRoute = (id: string, r: Partial<TransportRoute>) => {
+    setRoutes((prev) => prev.map((item) => (item.id === id ? { ...item, ...r } : item)));
+    logAction(`Updated Transit Route ID: ${id}`, 'Transport', id);
+  };
+
+  const deleteRoute = (id: string) => {
+    setRoutes((prev) => prev.filter((item) => item.id !== id));
+    logAction(`Removed Transit Route ID: ${id}`, 'Transport', id);
+  };
+
+  const addDriver = (d: Omit<Driver, 'id'>) => {
+    const newD: Driver = { ...d, id: `drv-${Date.now()}` };
+    setDrivers((prev) => [...prev, newD]);
+    logAction(`Registered Driver: ${d.name}`, 'Transport', newD.id);
+  };
+
+  const updateDriver = (id: string, d: Partial<Driver>) => {
+    setDrivers((prev) => prev.map((item) => (item.id === id ? { ...item, ...d } : item)));
+    logAction(`Updated Driver ID: ${id}`, 'Transport', id);
+  };
+
   // Inventory
   const addInventoryItem = (item: Omit<InventoryItem, 'id'>) => {
     const newItem: InventoryItem = { ...item, id: `inv-${Date.now()}` };
@@ -972,8 +1026,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         issueBook,
         returnBook,
         vehicles,
+        addVehicle,
+        updateVehicle,
+        deleteVehicle,
         drivers,
+        addDriver,
+        updateDriver,
         routes,
+        addRoute,
+        updateRoute,
+        deleteRoute,
         inventory,
         addInventoryItem,
         updateStock,

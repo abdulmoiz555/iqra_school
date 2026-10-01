@@ -209,19 +209,37 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateToPub
           )}
         </div>
 
-        {/* Dark / Light Mode Toggle */}
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-          title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          aria-label="Toggle theme"
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5 text-amber-400" />
-          ) : (
-            <Moon className="h-5 w-5 text-neutral-600" />
-          )}
-        </button>
+        {/* Dark / Light Mode Segmented Toggle */}
+        <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-100/90 p-0.5 dark:border-neutral-700 dark:bg-neutral-800">
+          <button
+            type="button"
+            onClick={() => setDarkMode(false)}
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+              !darkMode
+                ? 'bg-white text-neutral-900 shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
+                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+            title="Switch to Light Mode"
+            aria-label="Light Mode"
+          >
+            <Sun className={`h-3.5 w-3.5 ${!darkMode ? 'text-amber-500' : 'text-neutral-400'}`} />
+            <span className="hidden sm:inline">Light</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDarkMode(true)}
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
+              darkMode
+                ? 'bg-neutral-900 text-white shadow-xs dark:bg-neutral-950 dark:text-neutral-100'
+                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+            title="Switch to Dark Mode"
+            aria-label="Dark Mode"
+          >
+            <Moon className={`h-3.5 w-3.5 ${darkMode ? 'text-indigo-400' : 'text-neutral-400'}`} />
+            <span className="hidden sm:inline">Dark</span>
+          </button>
+        </div>
 
         {/* User Profile Pill & Dropdown */}
         <div className="relative">
@@ -265,6 +283,39 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateToPub
                 <span className="inline-block mt-1 text-[10px] font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950 px-2 py-0.5 rounded-sm">
                   {currentUser.role}
                 </span>
+              </div>
+
+              {/* Appearance / Theme Selector */}
+              <div className="p-2 border-b border-neutral-100 dark:border-neutral-800 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">
+                  Theme Appearance
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setDarkMode(false)}
+                    className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                      !darkMode
+                        ? 'border-amber-400 bg-amber-50 text-amber-900 font-bold dark:bg-amber-950/40 dark:text-amber-300'
+                        : 'border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                    }`}
+                  >
+                    <Sun className="h-3.5 w-3.5 text-amber-500" />
+                    <span>Light Mode</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDarkMode(true)}
+                    className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                      darkMode
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-900 font-bold dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-400'
+                        : 'border-neutral-200 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                    }`}
+                  >
+                    <Moon className="h-3.5 w-3.5 text-indigo-400" />
+                    <span>Dark Mode</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1">

@@ -152,13 +152,18 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   const filteredStudents = useMemo(() => {
     const q = (localSearch || globalSearch).toLowerCase().trim();
     return students.filter((stu) => {
-      // Role filtering: Student sees only themselves; Parent sees only their children
-      if (currentUser.role === 'Student' && currentUser.linkedId) {
+      // Role filtering: Student sees only themselves; Parent sees strictly only their children
+      if (currentUser.role === 'Student') {
         if (stu.id !== currentUser.linkedId) return false;
       }
-      if (currentUser.role === 'Parent' && currentUser.linkedId) {
-        const parent = parents.find((p) => p.id === currentUser.linkedId);
-        if (parent && !parent.studentIds.includes(stu.id)) return false;
+      if (currentUser.role === 'Parent') {
+        const parent = parents.find((p) => p.id === currentUser.linkedId || p.email === currentUser.email);
+        if (parent) {
+          const isMyChild = (parent.studentIds && parent.studentIds.includes(stu.id)) || stu.parentId === parent.id;
+          if (!isMyChild) return false;
+        } else {
+          if (stu.parentId !== currentUser.linkedId) return false;
+        }
       }
 
       if (selectedClass !== 'all' && stu.classId !== selectedClass) return false;
@@ -238,21 +243,25 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Student Enrolment Directory
+            {currentUser.role === 'Parent' ? 'My Children Enrolment Records' : 'Student Enrolment Directory'}
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Manage student admissions, academic profiles, ID cards and class promotions
+            {currentUser.role === 'Parent'
+              ? 'Official academic profile, roll call status, and ID cards for your enrolled children'
+              : 'Manage student admissions, academic profiles, ID cards and class promotions'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Export CSV
-          </button>
+          {currentUser.role !== 'Parent' && (
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
+            </button>
+          )}
 
           {canManage && (
             <>

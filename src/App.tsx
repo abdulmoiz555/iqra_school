@@ -30,9 +30,19 @@ import { SignInPage } from './components/public/SignInPage';
 import { Student, FeePayment } from './types';
 
 export const AppContent: React.FC = () => {
-  const { activeTab, setActiveTab } = useApp();
+  const { activeTab, setActiveTab, currentUser } = useApp();
   const [portalMode, setPortalMode] = useState<'index' | 'signin' | 'portal'>('index');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Parent strict redirection: Parent only has access to My Children, Attendance, Fees, and Exams
+  React.useEffect(() => {
+    if (
+      currentUser.role === 'Parent' &&
+      (activeTab === 'dashboard' || !['students', 'attendance', 'fees', 'examinations'].includes(activeTab))
+    ) {
+      setActiveTab('students');
+    }
+  }, [currentUser.role, activeTab, setActiveTab]);
 
   // Global modals
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);

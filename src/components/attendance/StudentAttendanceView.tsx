@@ -29,11 +29,18 @@ export const StudentAttendanceView: React.FC = () => {
     teachers,
     currentUser,
     isClassTeacher,
+    parents,
   } = useApp();
+
+  const isParent = currentUser.role === 'Parent';
+  const parentRecord = parents.find((p) => p.id === currentUser.linkedId || p.email === currentUser.email);
+  const myChildren = students.filter((s) => parentRecord?.studentIds?.includes(s.id) || s.parentId === parentRecord?.id);
 
   const [attendanceType, setAttendanceType] = useState<'student' | 'teacher'>('student');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [selectedClassId, setSelectedClassId] = useState<string>(classes[classes.length - 1]?.id || classes[0]?.id || '');
+  const [selectedClassId, setSelectedClassId] = useState<string>(
+    isParent && myChildren.length > 0 ? myChildren[0].classId : (classes[classes.length - 1]?.id || classes[0]?.id || '')
+  );
   const [selectedSectionId, setSelectedSectionId] = useState<string>(sections[0]?.id || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
@@ -53,8 +60,11 @@ export const StudentAttendanceView: React.FC = () => {
   const canControlTeacherAttendance = ['Super Admin', 'Admin', 'Academic Admin', 'Admission Admin'].includes(currentUser.role);
   const canControlAttendance = canControlStudentAttendance;
 
-  // Student list for current selected class and category
+  // Student list for current selected class and category (Strictly scoped for Parent)
   const classStudents = students.filter((s) => {
+    if (isParent) {
+      return myChildren.some((c) => c.id === s.id);
+    }
     if (s.classId !== selectedClassId || s.status !== 'Active') return false;
     if (selectedCategory !== 'all' && (s.category || 'Co-Education') !== selectedCategory) return false;
     return true;
@@ -231,7 +241,7 @@ export const StudentAttendanceView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-            Daily Attendance Register
+            {isParent ? "Child's Daily Attendance Register" : 'Daily Attendance Register'}
             {canControlStudentAttendance ? (
               <span className="flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">
                 <ShieldCheck className="h-3 w-3" /> {isSuperOrAdmin ? 'Admin Controlled' : 'Class Incharge Authorized'}
@@ -243,33 +253,37 @@ export const StudentAttendanceView: React.FC = () => {
             )}
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Attendance governance exclusively controlled by Super Admin (Sir Imran), Academic Admin, and designated Class Incharge Teachers
+            {isParent
+              ? 'Official daily attendance record and teacher roll call remarks for your children'
+              : 'Attendance governance exclusively controlled by Super Admin (Sir Imran), Academic Admin, and designated Class Incharge Teachers'}
           </p>
         </div>
 
-        {/* Attendance Type Selector */}
-        <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs">
-          <button
-            onClick={() => setAttendanceType('student')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              attendanceType === 'student'
-                ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
-                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
-            }`}
-          >
-            Student Roll Call
-          </button>
-          <button
-            onClick={() => setAttendanceType('teacher')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              attendanceType === 'teacher'
-                ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
-                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
-            }`}
-          >
-            Faculty & Teacher Attendance (Admissions & Academic Admin)
-          </button>
-        </div>
+        {/* Attendance Type Selector (Hidden for Parents) */}
+        {!isParent && (
+          <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs">
+            <button
+              onClick={() => setAttendanceType('student')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                attendanceType === 'student'
+                  ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
+                  : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
+              }`}
+            >
+              Student Roll Call
+            </button>
+            <button
+              onClick={() => setAttendanceType('teacher')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                attendanceType === 'teacher'
+                  ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
+                  : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
+              }`}
+            >
+              Faculty & Teacher Attendance (Admissions & Academic Admin)
+            </button>
+          </div>
+        )}
       </div>
 
       {/* RBAC Notice for users */}
