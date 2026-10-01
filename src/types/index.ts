@@ -41,6 +41,13 @@ export interface SchoolSettings {
   dateFormat: string;
   timezone: string;
   logoUrl: string;
+  siblingFirstChildPayPercent?: number; // default 100%
+  siblingSecondChildPayPercent?: number; // default 50%
+  siblingThirdChildPayPercent?: number; // default 0% (Free)
+  restrictTeacherToAssignedClasses?: boolean; // Restrict teachers to only their assigned classes & students
+  hideFinancialsFromNonAdmins?: boolean; // Hide fees collection and financial revenues from teachers/faculty/students/parents
+  hideEnrollmentTotalsFromNonAdmins?: boolean; // Hide campus-wide enrollment totals from non-admins
+  restrictLogsToAdminsAndPrincipal?: boolean; // Only show system audit logs to academic admins and principal
 }
 
 export interface AcademicSession {
@@ -140,6 +147,7 @@ export interface Teacher {
   joiningDate: string;
   department: string;
   designation: string;
+  teacherCategory?: 'Class Teacher' | 'Subject Teacher' | 'Head of Department' | 'Visiting Lecturer';
   salary: number;
   photoUrl?: string;
   status: 'Active' | 'On Leave' | 'Resigned' | 'Terminated';
@@ -232,6 +240,7 @@ export interface FeeStructure {
 export interface FeePayment {
   id: string;
   receiptNumber: string;
+  trackingNumber?: string; // Tracking ID e.g. TRK-2026-9812
   studentId: string;
   date: string;
   month: string;

@@ -53,8 +53,18 @@ export const PayslipModal: React.FC<PayslipModalProps> = ({
 
         {/* Printable Payslip Body */}
         <div className="p-8 overflow-y-auto max-h-[80vh]">
-          <div className="rounded-xl border-2 border-neutral-800 bg-white p-6 text-neutral-900 shadow-sm relative font-sans">
-            {/* Header */}
+          <div className="rounded-xl border-2 border-neutral-800 bg-white p-6 text-neutral-900 shadow-sm relative font-sans overflow-hidden">
+            {/* School Logo Watermark */}
+            {settings.logoUrl && (
+              <img
+                src={settings.logoUrl}
+                alt="Watermark"
+                className="absolute inset-0 m-auto w-64 h-64 object-contain opacity-7 pointer-events-none select-none z-0"
+              />
+            )}
+
+            <div className="relative z-10">
+              {/* Header */}
             <div className="text-center border-b-2 border-neutral-800 pb-4">
               <h2 className="text-lg font-black uppercase tracking-tight text-neutral-900">
                 {settings.schoolName}
@@ -160,5 +170,6 @@ export const PayslipModal: React.FC<PayslipModalProps> = ({
         </div>
       </div>
     </div>
+  </div>
   );
 };

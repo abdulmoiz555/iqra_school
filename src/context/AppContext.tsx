@@ -620,13 +620,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const collectFee = (payment: Omit<FeePayment, 'id' | 'receiptNumber'>): string => {
     const receiptNumber = `REC-2026-${String(feePayments.length + 43).padStart(4, '0')}`;
+    const trackingNumber = payment.trackingNumber || `TRK-2026-${Math.floor(10000 + Math.random() * 90000)}`;
     const newPayment: FeePayment = {
       ...payment,
       id: `pay-${Date.now()}`,
       receiptNumber,
+      trackingNumber,
     };
     setFeePayments((prev) => [newPayment, ...prev]);
-    logAction(`Fee Collected: ${receiptNumber} Amount: ${settings.currencySymbol}${payment.paidAmount}`, 'Fees', receiptNumber);
+    logAction(`Fee Collected: ${receiptNumber} (Tracking: ${trackingNumber}) Amount: ${settings.currencySymbol}${payment.paidAmount}`, 'Fees', receiptNumber);
     return receiptNumber;
   };
 

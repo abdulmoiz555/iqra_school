@@ -45,7 +45,15 @@ export const TimetableView: React.FC = () => {
   const canManage = ['Super Admin', 'Admin', 'Teacher'].includes(currentUser.role);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Official School Watermark for Printable Schedule */}
+      {settings.logoUrl && (
+        <img
+          src={settings.logoUrl}
+          alt="Watermark"
+          className="hidden print:block fixed inset-0 m-auto w-96 h-96 object-contain opacity-10 pointer-events-none select-none z-0"
+        />
+      )}
       {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex flex-wrap items-center gap-3">

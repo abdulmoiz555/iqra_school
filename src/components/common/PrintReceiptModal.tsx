@@ -171,6 +171,7 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
               <div style="text-align: right;">
                 <div style="border: 1px solid #111; padding: 2px 6px; font-size: 8px; font-weight: bold; display: inline-block;">SCHOOL / ACCOUNTS COPY</div>
                 <div style="font-size: 9px; font-weight: bold; margin-top: 2px;">Challan #: ${payment.receiptNumber}</div>
+                <div style="font-size: 8px; font-family: monospace; font-weight: bold; color: #1e3a8a;">Tracking #: ${payment.trackingNumber || `TRK-2026-${payment.receiptNumber.slice(-4)}`}</div>
                 <div style="font-size: 8px; color: #666;">Date: ${payment.date}</div>
               </div>
             </div>
@@ -263,6 +264,7 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
               <div style="text-align: right;">
                 <div style="border: 1.5px solid #059669; color: #065f46; background: #ecfdf5; padding: 2px 6px; font-size: 8px; font-weight: bold; display: inline-block;">STUDENT / PARENT COPY</div>
                 <div style="font-size: 9px; font-weight: bold; margin-top: 2px;">Challan #: ${payment.receiptNumber}</div>
+                <div style="font-size: 8px; font-family: monospace; font-weight: bold; color: #047857;">Tracking #: ${payment.trackingNumber || `TRK-2026-${payment.receiptNumber.slice(-4)}`}</div>
                 <div style="font-size: 8px; color: #666;">Date: ${payment.date}</div>
               </div>
             </div>
@@ -414,6 +416,9 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
               </span>
               <div className="mt-0.5 font-mono font-bold text-[9.5px] text-neutral-800">
                 Challan #: {payment.receiptNumber}
+              </div>
+              <div className="text-[8.5px] font-mono font-bold text-blue-700">
+                Tracking #: {payment.trackingNumber || `TRK-2026-${payment.receiptNumber.slice(-4)}`}
               </div>
               <div className="text-[8px] font-mono text-neutral-500">
                 Issue Date: {payment.date}

@@ -15,7 +15,10 @@ import {
   Calendar,
   Plus,
   Check,
-  X
+  Percent,
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const SchoolSettingsView: React.FC = () => {
@@ -23,19 +26,17 @@ export const SchoolSettingsView: React.FC = () => {
     settings,
     updateSettings,
     auditLogs,
-    resetToDefaultData,
-    exportDatabaseJSON,
-    importDatabaseJSON,
     sessions,
     setActiveSession,
     addSession,
     currentUser,
+    darkMode,
+    setDarkMode,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'settings' | 'audit' | 'backup'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'audit'>('settings');
   const [formData, setFormData] = useState(settings);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   // New Session Modal State
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
@@ -44,7 +45,8 @@ export const SchoolSettingsView: React.FC = () => {
   const [newSessEnd, setNewSessEnd] = useState('');
   const [newSessIsActive, setNewSessIsActive] = useState(false);
 
-  const canManageSessions = ['Super Admin', 'Admin'].includes(currentUser.role);
+  const canManageSessions = ['Super Admin', 'Admin', 'Academic Admin'].includes(currentUser.role);
+  const canViewAuditLogs = ['Super Admin', 'Admin', 'Academic Admin'].includes(currentUser.role);
 
   const handleAddNewSession = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,45 +71,16 @@ export const SchoolSettingsView: React.FC = () => {
     setTimeout(() => setSavedSuccess(false), 2000);
   };
 
-  const handleExport = () => {
-    const jsonStr = exportDatabaseJSON();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `school_management_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const success = importDatabaseJSON(content);
-      if (success) {
-        setImportStatus('Database restored successfully from backup!');
-      } else {
-        setImportStatus('Invalid backup JSON format. Please verify the file.');
-      }
-      setTimeout(() => setImportStatus(null), 3000);
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            School Configuration, System Logs & Database
+            School Configuration & System Logs
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Manage school identity, currency, academic sessions, audit logs, and data backups
+            Manage school identity, currency, theme, academic sessions, and audit logs
           </p>
         </div>
 
@@ -121,28 +94,20 @@ export const SchoolSettingsView: React.FC = () => {
                 : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
             }`}
           >
-            School Settings
+            School Settings & Profiles
           </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              activeTab === 'audit'
-                ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
-                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
-            }`}
-          >
-            Audit Logs ({auditLogs.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('backup')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-              activeTab === 'backup'
-                ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
-                : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
-            }`}
-          >
-            Backup & Factory Reset
-          </button>
+          {canViewAuditLogs && (
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+                activeTab === 'audit'
+                  ? 'bg-white text-blue-600 font-bold shadow-xs dark:bg-neutral-900 dark:text-blue-400'
+                  : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
+              }`}
+            >
+              Audit Logs ({auditLogs.length})
+            </button>
+          )}
         </div>
       </div>
 
@@ -264,6 +229,53 @@ export const SchoolSettingsView: React.FC = () => {
               </div>
             </div>
 
+            {/* System Appearance & Theme Mode */}
+            <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1.5">
+                <Sun className="h-4 w-4" /> System Theme & Display Mode
+              </h3>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-3">
+                Switch between Light theme and Dark theme across the complete school management system.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
+                <button
+                  type="button"
+                  onClick={() => setDarkMode(false)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    !darkMode
+                      ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-bold dark:border-blue-400'
+                      : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="p-2 rounded-lg bg-amber-100 text-amber-700">
+                    <Sun className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold">Light Theme</div>
+                    <div className="text-[10px] text-neutral-500">Standard crisp high-contrast day theme</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDarkMode(true)}
+                  className={`flex items-center gap-3 p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    darkMode
+                      ? 'border-blue-500 bg-blue-950/40 text-blue-300 font-bold'
+                      : 'border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="p-2 rounded-lg bg-neutral-800 text-neutral-200">
+                    <Moon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold">Dark Theme</div>
+                    <div className="text-[10px] text-neutral-400">Eye-friendly deep dark mode</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Financial & Regional Defaults */}
             <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1.5">
@@ -305,6 +317,84 @@ export const SchoolSettingsView: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                     className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono dark:border-neutral-700 dark:bg-neutral-800"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Sibling Fee Concession Settings (Configurable: 1st 100%, 2nd 50%, 3rd Free) */}
+            <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                  <Percent className="h-4 w-4" /> Sibling Fee Concession Rules (Editable)
+                </h3>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full">
+                  1st: {formData.siblingFirstChildPayPercent ?? 100}% Pay · 2nd: {formData.siblingSecondChildPayPercent ?? 50}% Pay · 3rd+: {formData.siblingThirdChildPayPercent ?? 0}% (Free)
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-3">
+                Configure exact payment percentages for multiple enrolled siblings from the same family. Automatically calculated during fee collection and voucher generation.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-800/40 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-neutral-800 dark:text-neutral-200">1st Sibling Fee Pay %</label>
+                    <span className="text-[10px] text-neutral-500 font-mono">Elder child</span>
+                  </div>
+                  <div className="relative mt-1">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.siblingFirstChildPayPercent ?? 100}
+                      onChange={(e) => setFormData({ ...formData, siblingFirstChildPayPercent: Number(e.target.value) })}
+                      className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-bold font-mono text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">%</span>
+                  </div>
+                  <p className="text-[10px] text-neutral-500 mt-1.5">Default: 100% (No discount applied)</p>
+                </div>
+
+                <div className="rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-blue-900 dark:text-blue-200">2nd Sibling Fee Pay %</label>
+                    <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">2nd child</span>
+                  </div>
+                  <div className="relative mt-1">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.siblingSecondChildPayPercent ?? 50}
+                      onChange={(e) => setFormData({ ...formData, siblingSecondChildPayPercent: Number(e.target.value) })}
+                      className="w-full rounded-lg border border-blue-300 bg-white px-3 py-1.5 font-bold font-mono text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">%</span>
+                  </div>
+                  <p className="text-[10px] text-blue-700 dark:text-blue-300 mt-1.5">
+                    Default: 50% (50% concession discount)
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-emerald-900 dark:text-emerald-200">3rd+ Sibling Fee Pay %</label>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">100% FREE</span>
+                  </div>
+                  <div className="relative mt-1">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.siblingThirdChildPayPercent ?? 0}
+                      onChange={(e) => setFormData({ ...formData, siblingThirdChildPayPercent: Number(e.target.value) })}
+                      className="w-full rounded-lg border border-emerald-300 bg-white px-3 py-1.5 font-bold font-mono text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">%</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-1.5">
+                    Default: 0% (100% Free Concession)
+                  </p>
                 </div>
               </div>
             </div>
@@ -421,63 +511,6 @@ export const SchoolSettingsView: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 3: Backup & Restore */}
-      {activeTab === 'backup' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Export / Import Box */}
-          <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-4">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-              Database Export & Snapshot Backup
-            </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Export the entire relational database (students, teachers, fees, marks, attendance, settings) into a portable JSON snapshot.
-            </p>
-
-            {importStatus && (
-              <div className="p-3 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-xs rounded-lg font-semibold flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4" /> {importStatus}
-              </div>
-            )}
-
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleExport}
-                className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 cursor-pointer shadow-xs"
-              >
-                <Download className="h-4 w-4" /> Export Database Backup (JSON)
-              </button>
-
-              <label className="flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer">
-                <Upload className="h-4 w-4" /> Restore from File
-                <input type="file" accept=".json" onChange={handleImportFile} className="hidden" />
-              </label>
-            </div>
-          </div>
-
-          {/* Reset Factory Seed Box */}
-          <div className="rounded-xl border border-rose-200 bg-white p-5 shadow-xs dark:border-rose-950/60 dark:bg-neutral-900 space-y-4">
-            <h3 className="text-sm font-bold text-rose-700 dark:text-rose-400 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" /> Factory Demo Reset
-            </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Re-populate all 20 demo students, faculty members, classes, fee payments, examination marks, and attendance records back to the fresh initial seed state.
-            </p>
-
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  if (confirm('Are you sure you want to reset the database to the default demo seed data? All custom modifications will be re-initialized.')) {
-                    resetToDefaultData();
-                  }
-                }}
-                className="flex items-center gap-2 rounded-lg border border-rose-600 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 cursor-pointer"
-              >
-                <RefreshCw className="h-4 w-4" /> Reset to Factory Sample Data
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Add Session Modal */}
       {isAddSessionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4">

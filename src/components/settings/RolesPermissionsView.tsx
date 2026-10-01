@@ -18,7 +18,9 @@ import {
   EyeOff,
   Sparkles,
   Layers,
-  CalendarCheck
+  CalendarCheck,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export const RolesPermissionsView: React.FC = () => {
@@ -32,6 +34,7 @@ export const RolesPermissionsView: React.FC = () => {
     updateTeacher,
     classes,
     settings,
+    updateSettings,
   } = useApp();
 
   const [searchUser, setSearchUser] = useState('');
@@ -41,11 +44,14 @@ export const RolesPermissionsView: React.FC = () => {
   const [editEmail, setEditEmail] = useState('');
   const [editRole, setEditRole] = useState<UserRole>('Teacher');
   const [editPassword, setEditPassword] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
-  // Super Admin exclusivity check
+  // Principal (Super Admin) & Academic Admin authorization check
   const isSuperAdmin = currentUser.role === 'Super Admin';
+  const isAdmin = currentUser.role === 'Admin';
+  const isAuthorized = isSuperAdmin || isAdmin;
 
   const handleOpenEditUser = (user: User) => {
     setEditingUser(user);
@@ -54,6 +60,7 @@ export const RolesPermissionsView: React.FC = () => {
     setEditEmail(user.email || '');
     setEditRole(user.role);
     setEditPassword(user.password || '');
+    setEditAvatar(user.avatar || '');
     setShowPassword(false);
   };
 
@@ -77,6 +84,7 @@ export const RolesPermissionsView: React.FC = () => {
       email: editEmail.trim(),
       role: editRole,
       password: editPassword.trim(),
+      avatar: editAvatar.trim() || undefined,
     });
 
     setSaveSuccessMsg(`Successfully updated user profile & credentials for "${editName}"`);
@@ -95,17 +103,17 @@ export const RolesPermissionsView: React.FC = () => {
     );
   });
 
-  if (!isSuperAdmin) {
+  if (!isAuthorized) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-8 text-center dark:border-rose-900/60 dark:bg-rose-950/20 max-w-xl mx-auto my-8">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-400 mb-4">
           <Lock className="h-7 w-7" />
         </div>
         <h3 className="text-lg font-bold text-rose-900 dark:text-rose-200 mb-1">
-          Restricted Access: Super Admin Exclusive
+          Restricted Access: Leadership Authority Only
         </h3>
         <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed mb-4">
-          The <strong>Roles & Permissions and Credentials Governance Center</strong> is strictly restricted to <strong>Sir Imran (Super Admin)</strong>. Switch to the Super Admin role from the top-right menu to manage user accounts, edit names, change passwords, and configure permissions.
+          The <strong>Roles & Permissions and Credentials Governance Center</strong> is strictly restricted to <strong>Sir Imran (Principal)</strong> and <strong>Academic & Admissions Administration</strong>. Switch your active role from the top-right profile menu to manage permissions and restrict content.
         </p>
       </div>
     );
@@ -113,7 +121,7 @@ export const RolesPermissionsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner: Sir Imran Super Admin Security Authority */}
+      {/* Top Banner: Principal & Academic Admin Security Authority */}
       <div className="rounded-2xl border border-blue-200 bg-linear-to-r from-blue-900 via-indigo-900 to-neutral-900 p-5 md:p-6 text-white shadow-lg relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
@@ -124,36 +132,33 @@ export const RolesPermissionsView: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded-sm bg-amber-400 text-neutral-950 text-[10px] font-black uppercase tracking-wider">
-                  SUPER ADMIN GOVERNANCE
+                  INSTITUTIONAL GOVERNANCE
                 </span>
                 <span className="text-xs text-neutral-300 font-mono">
-                  Controlled by Sir Imran Only
+                  Principal (Sir Imran) & Academic Admin Control
                 </span>
               </div>
               <h2 className="text-xl md:text-2xl font-black tracking-tight text-white mt-0.5">
-                Roles, System Permissions & User Credentials
+                Responsibilities, Access Control & Content Restrictions
               </h2>
               <p className="text-xs text-neutral-300 mt-1 max-w-2xl leading-relaxed">
-                Empowered to assign attendance permissions, edit usernames & strong passwords, and govern granular access across all modules of {settings.schoolName}.
+                Empowered to restrict what teachers, students, and parents see, configure class assignments, govern strong credentials, and audit all system operations of {settings.schoolName}.
               </p>
             </div>
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/15 text-xs space-y-1 shrink-0 font-mono">
             <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-sans font-bold">
-              Active Superadmin Credentials
+              Active Executive Credentials
             </div>
             <div>
-              <span className="text-neutral-300">Name:</span> <strong className="text-amber-300">Sir Imran</strong>
+              <span className="text-neutral-300">Principal:</span> <strong className="text-amber-300">{settings.principalName || 'Sir Imran'}</strong>
             </div>
             <div>
-              <span className="text-neutral-300">Login:</span> <strong>admin</strong>
+              <span className="text-neutral-300">Authority:</span> <strong className="text-emerald-400">{currentUser.name} ({currentUser.role})</strong>
             </div>
             <div>
-              <span className="text-neutral-300">Email:</span> <strong>iqra.gk1994@gmail.com</strong>
-            </div>
-            <div>
-              <span className="text-neutral-300">Strong Password:</span> <span className="text-emerald-400 font-bold">SirImran@Iqra2026!</span>
+              <span className="text-neutral-300">Official Email:</span> <strong>{settings.email || 'iqra.gk1994@gmail.com'}</strong>
             </div>
           </div>
         </div>
@@ -165,6 +170,156 @@ export const RolesPermissionsView: React.FC = () => {
           <span>{saveSuccessMsg}</span>
         </div>
       )}
+
+      {/* NEW PROMINENT SECTION: Campus Privacy & Content Visibility Restrictions */}
+      <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-4">
+        <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              Campus Privacy & Content Visibility Control Center
+            </h3>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            Configure exactly what data and metrics are visible or hidden from teachers, students, parents, and general staff.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Toggle 1: Restrict Teacher to Assigned Classes */}
+          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-800/40 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                  Restrict Teachers to Relevant Assigned Classes Only
+                </span>
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                  Protected
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                When enabled, teachers will only see their designated class sections, their own student rosters, timetable periods, and exam marks. Whole-school directories are hidden.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const nextVal = !(settings.restrictTeacherToAssignedClasses ?? true);
+                updateSettings({ restrictTeacherToAssignedClasses: nextVal });
+                setSaveSuccessMsg(nextVal ? 'Enabled: Teachers now strictly restricted to their assigned classes & students.' : 'Disabled: Teachers can view general campus classes.');
+                setTimeout(() => setSaveSuccessMsg(''), 3500);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                (settings.restrictTeacherToAssignedClasses ?? true) ? 'bg-blue-600' : 'bg-neutral-300 dark:bg-neutral-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  (settings.restrictTeacherToAssignedClasses ?? true) ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Toggle 2: Hide Financial Revenue & Fee Collections */}
+          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-800/40 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                  Hide Fees Collection & Campus Finances from Non-Admins
+                </span>
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  Confidential
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                Protects institutional accounts. Hides fee revenue, campus operational expenses, and bursar metrics from teachers, students, and parents.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const nextVal = !(settings.hideFinancialsFromNonAdmins ?? true);
+                updateSettings({ hideFinancialsFromNonAdmins: nextVal });
+                setSaveSuccessMsg(nextVal ? 'Enabled: Fees and campus revenue charts hidden from teachers and general users.' : 'Disabled: Financial charts visible.');
+                setTimeout(() => setSaveSuccessMsg(''), 3500);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                (settings.hideFinancialsFromNonAdmins ?? true) ? 'bg-emerald-600' : 'bg-neutral-300 dark:bg-neutral-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  (settings.hideFinancialsFromNonAdmins ?? true) ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Toggle 3: Hide School-wide Enrolment Totals */}
+          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-800/40 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                  Hide Whole-School Enrolment Totals from Non-Admins
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                Only Sir Imran (Principal) and Academic Administration can see campus-wide student aggregate counts and total numbers.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const nextVal = !(settings.hideEnrollmentTotalsFromNonAdmins ?? true);
+                updateSettings({ hideEnrollmentTotalsFromNonAdmins: nextVal });
+                setSaveSuccessMsg(nextVal ? 'Enabled: Total enrolment count hidden from non-admin roles.' : 'Disabled: Total enrolment visible to all.');
+                setTimeout(() => setSaveSuccessMsg(''), 3500);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                (settings.hideEnrollmentTotalsFromNonAdmins ?? true) ? 'bg-blue-600' : 'bg-neutral-300 dark:bg-neutral-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  (settings.hideEnrollmentTotalsFromNonAdmins ?? true) ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Toggle 4: Restrict Audit Logs to Leadership */}
+          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-800/40 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                  Restrict System Audit Logs to Principal & Academic Admin
+                </span>
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                  Root Audit
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                Completely restricts system operation histories, login logs, and modification audits to Sir Imran (Principal) and Academic Admin.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const nextVal = !(settings.restrictLogsToAdminsAndPrincipal ?? true);
+                updateSettings({ restrictLogsToAdminsAndPrincipal: nextVal });
+                setSaveSuccessMsg(nextVal ? 'Enabled: Audit logs strictly restricted to Principal and Academic Admin.' : 'Disabled: Audit logs accessible.');
+                setTimeout(() => setSaveSuccessMsg(''), 3500);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                (settings.restrictLogsToAdminsAndPrincipal ?? true) ? 'bg-amber-600' : 'bg-neutral-300 dark:bg-neutral-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  (settings.restrictLogsToAdminsAndPrincipal ?? true) ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Section 1: User Accounts & Edit Names/Passwords */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-4">
@@ -211,10 +366,18 @@ export const RolesPermissionsView: React.FC = () => {
                   <tr key={u.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40">
                     <td className="py-2.5 px-3 font-semibold text-neutral-900 dark:text-neutral-100">
                       <div className="flex items-center gap-2">
-                        {isSuper ? (
-                          <span className="text-amber-500 text-base">👑</span>
+                        {u.avatar ? (
+                          <img
+                            src={u.avatar}
+                            alt={u.name}
+                            className="h-7 w-7 rounded-full object-cover border border-neutral-300 dark:border-neutral-700 shadow-2xs"
+                          />
+                        ) : isSuper ? (
+                          <div className="h-7 w-7 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-sm shadow-2xs border border-amber-300">
+                            👑
+                          </div>
                         ) : (
-                          <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">
+                          <div className="h-7 w-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px] shadow-2xs">
                             {u.name.charAt(0)}
                           </div>
                         )}
@@ -552,6 +715,96 @@ export const RolesPermissionsView: React.FC = () => {
                   placeholder="iqra.gk1994@gmail.com"
                   className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-mono text-neutral-900 focus:border-blue-500 focus:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
                 />
+              </div>
+
+              {/* User Profile Picture Section */}
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                  System User Profile Picture
+                </label>
+                <div className="flex items-center gap-3">
+                  {editAvatar ? (
+                    <img
+                      src={editAvatar}
+                      alt="Avatar Preview"
+                      className="h-11 w-11 rounded-full object-cover border-2 border-blue-500 shadow-xs shrink-0"
+                    />
+                  ) : (
+                    <div className="h-11 w-11 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center font-bold text-xs shrink-0">
+                      {editName ? editName.slice(0, 2).toUpperCase() : 'US'}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editAvatar}
+                        onChange={(e) => setEditAvatar(e.target.value)}
+                        placeholder="Image URL or choose file below..."
+                        className="flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                      />
+                      <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-300 bg-white text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer shrink-0">
+                        <Upload className="h-3 w-3 text-blue-600" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                if (event.target?.result) {
+                                  setEditAvatar(event.target.result as string);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px]">
+                      <span className="text-neutral-400">Presets:</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditAvatar('/student_demo_avatar_1790626593325.jpg')}
+                        className="text-blue-600 hover:underline cursor-pointer font-medium"
+                      >
+                        Avatar 1
+                      </button>
+                      <span className="text-neutral-300">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditAvatar('/award_1.jpg')}
+                        className="text-blue-600 hover:underline cursor-pointer font-medium"
+                      >
+                        Photo A
+                      </button>
+                      <span className="text-neutral-300">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditAvatar('/award_2.jpg')}
+                        className="text-blue-600 hover:underline cursor-pointer font-medium"
+                      >
+                        Photo B
+                      </button>
+                      {editAvatar && (
+                        <>
+                          <span className="text-neutral-300">·</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditAvatar('')}
+                            className="text-rose-600 hover:underline cursor-pointer font-medium"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>

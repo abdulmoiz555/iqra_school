@@ -131,14 +131,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'reports',
       label: 'Reports Hub',
       icon: BarChart3,
-      allowedRoles: ['Super Admin', 'Admin', 'Accountant', 'Librarian', 'Teacher'],
+      allowedRoles: ['Super Admin', 'Admin', 'Accountant'],
     },
     {
       id: 'roles_permissions',
-      label: 'Roles & Permissions',
+      label: 'Responsibilities & Access Control',
       icon: ShieldAlert,
-      allowedRoles: ['Super Admin'],
-      badge: 'Sir Imran',
+      allowedRoles: ['Super Admin', 'Admin'],
+      badge: 'Security',
     },
     {
       id: 'settings',

@@ -72,8 +72,18 @@ export const ResultCardModal: React.FC<ResultCardModalProps> = ({
 
         {/* Printable Transcript Layout */}
         <div className="p-8 overflow-y-auto max-h-[80vh]">
-          <div className="rounded-xl border-2 border-neutral-800 bg-white p-6 text-neutral-900 shadow-sm relative font-sans">
-            {/* Header with Crest */}
+          <div className="rounded-xl border-2 border-neutral-800 bg-white p-6 text-neutral-900 shadow-sm relative font-sans overflow-hidden">
+            {/* School Logo Watermark */}
+            {settings.logoUrl && (
+              <img
+                src={settings.logoUrl}
+                alt="School Watermark"
+                className="absolute inset-0 m-auto w-72 h-72 object-contain opacity-8 pointer-events-none select-none z-0"
+              />
+            )}
+
+            <div className="relative z-10">
+              {/* Header with Crest */}
             <div className="text-center border-b-2 border-neutral-800 pb-4">
               <div className="flex items-center justify-center gap-3 mb-1">
                 {settings.logoUrl && (
@@ -204,6 +214,7 @@ export const ResultCardModal: React.FC<ResultCardModalProps> = ({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

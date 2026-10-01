@@ -134,7 +134,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigateToPub
           <button
             onClick={() => {
               setShowNotifMenu(!showNotifMenu);
-              setShowRoleMenu(false);
               setShowUserMenu(false);
             }}
             className="relative rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors cursor-pointer"

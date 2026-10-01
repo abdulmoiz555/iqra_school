@@ -57,6 +57,13 @@ export const initialSettings: SchoolSettings = {
   dateFormat: 'DD/MM/YYYY',
   timezone: 'Asia/Karachi',
   logoUrl: '/iqra_logo.jpg',
+  siblingFirstChildPayPercent: 100, // 1st child pays 100%
+  siblingSecondChildPayPercent: 50,  // 2nd child pays 50%
+  siblingThirdChildPayPercent: 0,    // 3rd child is FREE!
+  restrictTeacherToAssignedClasses: true, // Only show relevant students & assigned classes to teachers
+  hideFinancialsFromNonAdmins: true, // Hide fee collections and monthly revenue & expenses from teachers/students/parents
+  hideEnrollmentTotalsFromNonAdmins: true, // Hide whole-school totals from non-admins
+  restrictLogsToAdminsAndPrincipal: true, // Only show system audit logs to Academic Admins and Principal (Sir Imran)
 };
 
 export const initialSessions: AcademicSession[] = [
@@ -664,6 +671,7 @@ export const initialTeachers: Teacher[] = [
     joiningDate: '2018-08-01',
     department: 'Mathematics & Physical Sciences',
     designation: 'Senior Master & Head of Sciences',
+    teacherCategory: 'Class Teacher',
     salary: 110000,
     status: 'Active',
     assignedClasses: ['cls-9'],
@@ -687,6 +695,7 @@ export const initialTeachers: Teacher[] = [
     joiningDate: '2020-09-01',
     department: 'Computer Science & ICT',
     designation: 'Lead ICT Lecturer',
+    teacherCategory: 'Subject Teacher',
     salary: 95000,
     status: 'Active',
     assignedClasses: ['cls-8', 'cls-9'],
@@ -707,6 +716,7 @@ export const initialTeachers: Teacher[] = [
     joiningDate: '2019-03-15',
     department: 'Biological & Chemical Sciences',
     designation: 'Senior Science Master',
+    teacherCategory: 'Subject Teacher',
     salary: 105000,
     status: 'Active',
     assignedClasses: ['cls-7', 'cls-9'],
@@ -727,10 +737,14 @@ export const initialTeachers: Teacher[] = [
     joiningDate: '2021-08-10',
     department: 'Humanities & Languages',
     designation: 'English Department Coordinator',
+    teacherCategory: 'Class Teacher',
     salary: 85000,
     status: 'Active',
     assignedClasses: ['cls-4', 'cls-9'],
     assignedSubjects: ['sub-6', 'sub-9'],
+    isClassTeacher: true,
+    assignedClassId: 'cls-4',
+    canMarkAttendance: true,
   },
   {
     id: 'tch-5',
@@ -747,10 +761,14 @@ export const initialTeachers: Teacher[] = [
     joiningDate: '2017-04-01',
     department: 'Islamic & Oriental Studies',
     designation: 'Senior Oriental Studies Master',
-    salary: 82000,
+    teacherCategory: 'Class Teacher',
+    salary: 75000,
     status: 'Active',
     assignedClasses: ['cls-1', 'cls-2', 'cls-9'],
     assignedSubjects: ['sub-7', 'sub-8'],
+    isClassTeacher: true,
+    assignedClassId: 'cls-1',
+    canMarkAttendance: true,
   },
 ];
 
@@ -873,6 +891,7 @@ export const initialFeePayments: FeePayment[] = [
   {
     id: 'pay-1',
     receiptNumber: 'REC-2026-0042',
+    trackingNumber: 'TRK-2026-89412',
     studentId: 'stu-1',
     date: '2026-09-05',
     month: 'September',
@@ -896,6 +915,7 @@ export const initialFeePayments: FeePayment[] = [
   {
     id: 'pay-2',
     receiptNumber: 'REC-2026-0043',
+    trackingNumber: 'TRK-2026-89413',
     studentId: 'stu-3',
     date: '2026-09-08',
     month: 'September',

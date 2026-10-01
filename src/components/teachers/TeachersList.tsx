@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Teacher } from '../../types';
-import { Search, Plus, Edit, Trash2, UserCheck, Phone, Mail, Award, BookOpen, Calendar, X, Save, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, UserCheck, Phone, Mail, Award, BookOpen, Calendar, X, Save, ShieldCheck, CheckCircle2, Upload } from 'lucide-react';
 
 export const TeachersList: React.FC = () => {
   const { teachers, addTeacher, updateTeacher, deleteTeacher, classes, subjects, currentUser, settings } = useApp();
@@ -25,6 +25,8 @@ export const TeachersList: React.FC = () => {
     designation: 'Senior Master',
     salary: 85000,
     status: 'Active' as Teacher['status'],
+    teacherCategory: 'Subject Teacher' as Teacher['teacherCategory'],
+    photoUrl: '',
     assignedClasses: [] as string[],
     assignedSubjects: [] as string[],
     isClassTeacher: false,
@@ -61,6 +63,8 @@ export const TeachersList: React.FC = () => {
       designation: 'Senior Master',
       salary: 85000,
       status: 'Active',
+      teacherCategory: 'Subject Teacher',
+      photoUrl: '',
       assignedClasses: [classes[0]?.id || ''],
       assignedSubjects: [subjects[0]?.id || ''],
       isClassTeacher: false,
@@ -88,6 +92,8 @@ export const TeachersList: React.FC = () => {
       designation: tch.designation,
       salary: tch.salary,
       status: tch.status,
+      teacherCategory: tch.teacherCategory || (tch.isClassTeacher ? 'Class Teacher' : 'Subject Teacher'),
+      photoUrl: tch.photoUrl || '',
       assignedClasses: tch.assignedClasses || [],
       assignedSubjects: tch.assignedSubjects || [],
       isClassTeacher: Boolean(tch.isClassTeacher),
@@ -168,14 +174,34 @@ export const TeachersList: React.FC = () => {
               <div>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700 font-bold text-sm dark:bg-amber-950/60 dark:text-amber-300">
-                      {teacher.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                    </div>
+                    {teacher.photoUrl ? (
+                      <img
+                        src={teacher.photoUrl}
+                        alt={teacher.name}
+                        className="h-11 w-11 rounded-xl object-cover border border-neutral-300 dark:border-neutral-700"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 font-bold text-sm dark:bg-blue-950/60 dark:text-blue-300">
+                        {teacher.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                      </div>
+                    )}
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
-                        {teacher.name}
-                      </h3>
-                      <p className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 leading-tight">
+                          {teacher.name}
+                        </h3>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          teacher.teacherCategory === 'Class Teacher' || teacher.isClassTeacher
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                            : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
+                        }`}>
+                          {teacher.teacherCategory || (teacher.isClassTeacher ? 'Class Teacher' : 'Subject Teacher')}
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 mt-0.5">
                         {teacher.employeeId} · <span className="text-blue-600 dark:text-blue-400 font-medium">{teacher.designation}</span>
                       </p>
                     </div>
@@ -377,16 +403,66 @@ export const TeachersList: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                  Residential Address
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Teacher Category *
+                  </label>
+                  <select
+                    value={formData.teacherCategory || 'Subject Teacher'}
+                    onChange={(e) => {
+                      const cat = e.target.value as any;
+                      setFormData({
+                        ...formData,
+                        teacherCategory: cat,
+                        isClassTeacher: cat === 'Class Teacher',
+                        canMarkAttendance: cat === 'Class Teacher',
+                      });
+                    }}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-semibold text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  >
+                    <option value="Class Teacher">Class Teacher (Attendance Authorized)</option>
+                    <option value="Subject Teacher">Subject Teacher</option>
+                    <option value="Head of Department">Head of Department</option>
+                    <option value="Visiting Lecturer">Visiting Lecturer</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Teacher Picture
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formData.photoUrl || ''}
+                      onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
+                      placeholder="Image URL or upload..."
+                      className="flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                    />
+                    <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-300 bg-white text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer shrink-0">
+                      <Upload className="h-3 w-3 text-blue-600" />
+                      <span>Upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              if (event.target?.result) {
+                                setFormData({ ...formData, photoUrl: event.target.result as string });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* Attendance & Class Incharge Permissions Section */}

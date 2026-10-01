@@ -92,12 +92,26 @@ export const FeeCollectionModal: React.FC<FeeCollectionModalProps> = ({
       // Find rank among siblings by admission date or id
       const sorted = [...familySiblings].sort((a, b) => a.admissionDate.localeCompare(b.admissionDate));
       const rank = sorted.findIndex((s) => s.id === student.id) + 1;
-      if (rank === 2) {
-        autoDisc = Math.round((initialSub * 25) / 100);
-        autoReason = '2nd Sibling Concession (25%)';
+      const firstPay = settings.siblingFirstChildPayPercent ?? 100;
+      const secondPay = settings.siblingSecondChildPayPercent ?? 50;
+      const thirdPay = settings.siblingThirdChildPayPercent ?? 0;
+
+      if (rank === 1) {
+        const discountPct = Math.max(0, 100 - firstPay);
+        if (discountPct > 0) {
+          autoDisc = Math.round((initialSub * discountPct) / 100);
+          autoReason = `1st Sibling Concession (${discountPct}% off, pays ${firstPay}%)`;
+        }
+      } else if (rank === 2) {
+        const discountPct = Math.max(0, 100 - secondPay);
+        autoDisc = Math.round((initialSub * discountPct) / 100);
+        autoReason = `2nd Sibling Concession (${discountPct}% off, pays ${secondPay}%)`;
       } else if (rank >= 3) {
-        autoDisc = Math.round((initialSub * 50) / 100);
-        autoReason = '3rd+ Sibling Concession (50%)';
+        const discountPct = Math.max(0, 100 - thirdPay);
+        autoDisc = Math.round((initialSub * discountPct) / 100);
+        autoReason = thirdPay === 0
+          ? '3rd+ Sibling Concession (100% FREE)'
+          : `3rd+ Sibling Concession (${discountPct}% off, pays ${thirdPay}%)`;
       }
     } else if (student.scholarshipPercent && student.scholarshipPercent > 0) {
       autoDisc = Math.round((initialSub * student.scholarshipPercent) / 100);

@@ -45,7 +45,7 @@ export const CredentialsModal: React.FC<CredentialsModalProps> = ({ isOpen, onCl
       description: 'Institutional head with complete administrative control and governance.',
       icon: '👑',
       badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-      permissions: ['School Settings & Branding', 'Fee Structure Management', 'System Audit Logs', 'Database Backup & Restore', 'Global User Governance']
+      permissions: ['School Settings & Branding', 'Fee Structure Management', 'System Audit Logs', 'Institutional Leadership', 'Global User Governance']
     },
     {
       role: 'Admin',

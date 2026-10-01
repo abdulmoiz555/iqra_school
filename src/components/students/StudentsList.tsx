@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   XCircle,
   FileText,
-  BadgeAlert
+  BadgeAlert,
+  X
 } from 'lucide-react';
 
 interface StudentsListProps {
@@ -39,7 +40,12 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     students,
     deleteStudent,
     classes,
+    addClass,
+    updateClass,
     sections,
+    addSection,
+    updateSection,
+    teachers,
     parents,
     currentUser,
     globalSearch,
@@ -52,6 +58,95 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [localSearch, setLocalSearch] = useState<string>('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Class Modal state
+  const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState<any | null>(null);
+  const [classForm, setClassForm] = useState({
+    name: '',
+    category: 'Co-Education' as 'Co-Education' | 'Male' | 'Female',
+    numericOrder: 1,
+    classTeacherId: '',
+  });
+
+  // Section Modal state
+  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<any | null>(null);
+  const [sectionForm, setSectionForm] = useState({
+    classId: '',
+    name: '',
+    roomNumber: '',
+    capacity: 35,
+    classTeacherId: '',
+  });
+
+  const handleOpenAddClass = () => {
+    setEditingClass(null);
+    setClassForm({
+      name: '',
+      category: 'Co-Education',
+      numericOrder: classes.length + 1,
+      classTeacherId: '',
+    });
+    setIsClassModalOpen(true);
+  };
+
+  const handleOpenEditClass = (cls: any) => {
+    setEditingClass(cls);
+    setClassForm({
+      name: cls.name,
+      category: cls.category || 'Co-Education',
+      numericOrder: cls.numericOrder || 1,
+      classTeacherId: cls.classTeacherId || '',
+    });
+    setIsClassModalOpen(true);
+  };
+
+  const handleSaveClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!classForm.name.trim()) return;
+    if (editingClass) {
+      updateClass(editingClass.id, classForm);
+    } else {
+      addClass(classForm);
+    }
+    setIsClassModalOpen(false);
+  };
+
+  const handleOpenAddSection = () => {
+    setEditingSection(null);
+    setSectionForm({
+      classId: selectedClass !== 'all' ? selectedClass : (classes[0]?.id || ''),
+      name: '',
+      roomNumber: 'Room 101',
+      capacity: 35,
+      classTeacherId: '',
+    });
+    setIsSectionModalOpen(true);
+  };
+
+  const handleOpenEditSection = (sec: any) => {
+    setEditingSection(sec);
+    setSectionForm({
+      classId: sec.classId,
+      name: sec.name,
+      roomNumber: sec.roomNumber || '',
+      capacity: sec.capacity || 35,
+      classTeacherId: sec.classTeacherId || '',
+    });
+    setIsSectionModalOpen(true);
+  };
+
+  const handleSaveSection = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sectionForm.name.trim() || !sectionForm.classId) return;
+    if (editingSection) {
+      updateSection(editingSection.id, sectionForm);
+    } else {
+      addSection(sectionForm);
+    }
+    setIsSectionModalOpen(false);
+  };
 
   // Filter students
   const filteredStudents = useMemo(() => {
@@ -88,7 +183,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       }
       return true;
     });
-  }, [students, localSearch, globalSearch, selectedClass, selectedSection, selectedStatus, currentUser, parents]);
+  }, [students, localSearch, globalSearch, selectedClass, selectedSection, selectedCategory, selectedStatus, currentUser, parents]);
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -162,18 +257,34 @@ export const StudentsList: React.FC<StudentsListProps> = ({
           {canManage && (
             <>
               <button
+                onClick={handleOpenAddClass}
+                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+                title="Create a new class with Category (Co-Education, Male, Female)"
+              >
+                <Plus className="h-3.5 w-3.5 text-blue-600" />
+                Add Class
+              </button>
+              <button
+                onClick={handleOpenAddSection}
+                className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+                title="Create a new section under a class"
+              >
+                <Plus className="h-3.5 w-3.5 text-blue-600" />
+                Add Section
+              </button>
+              <button
                 onClick={onOpenPromotion}
                 className="flex items-center gap-1.5 rounded-lg border border-blue-600 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 transition-colors cursor-pointer"
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                Student Promotion
+                Promotion
               </button>
               <button
                 onClick={onAddStudent}
                 className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs transition-colors cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                Add New Student
+                Add Student
               </button>
             </>
           )}
@@ -209,31 +320,73 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             </select>
           </div>
 
-          {/* Class Filter */}
-          <div>
+          {/* Class Filter & Edit Option */}
+          <div className="flex items-center gap-1">
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className="flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             >
               <option value="all">All Classes</option>
               {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name} {c.category ? `(${c.category})` : ''}
+                </option>
               ))}
             </select>
+            {canManage && selectedClass !== 'all' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const cls = classes.find((c) => c.id === selectedClass);
+                  if (cls) handleOpenEditClass(cls);
+                }}
+                className="p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                title="Edit Selected Class"
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Section Filter */}
-          <div>
+          {/* Section Filter & Edit Option */}
+          <div className="flex items-center gap-1">
             <select
               value={selectedSection}
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className="flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             >
               <option value="all">All Sections</option>
               {sections.map((sec) => (
                 <option key={sec.id} value={sec.id}>{sec.name}</option>
               ))}
+            </select>
+            {canManage && selectedSection !== 'all' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const sec = sections.find((s) => s.id === selectedSection);
+                  if (sec) handleOpenEditSection(sec);
+                }}
+                className="p-1.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                title="Edit Selected Section"
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Class Category Filter (Co-Education, Male, Female) */}
+          <div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 font-medium"
+            >
+              <option value="all">All Wings / Categories</option>
+              <option value="Co-Education">Co-Education</option>
+              <option value="Male">Boys Wing (Male)</option>
+              <option value="Female">Girls Wing (Female)</option>
             </select>
           </div>
 
@@ -462,6 +615,179 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                 Confirm Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Class Modal */}
+      {isClassModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-3">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                {editingClass ? 'Edit Class & Category' : 'Create New Class & Wing Category'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsClassModalOpen(false)}
+                className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveClass} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Class Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Grade 10, Grade 9, Nursery"
+                  value={classForm.name}
+                  onChange={(e) => setClassForm({ ...classForm, name: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-medium dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Class Category / Wing *</label>
+                  <select
+                    value={classForm.category}
+                    onChange={(e) => setClassForm({ ...classForm, category: e.target.value as any })}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-semibold text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  >
+                    <option value="Co-Education">Co-Education</option>
+                    <option value="Male">Boys Wing (Male)</option>
+                    <option value="Female">Girls Wing (Female)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Numeric Order</label>
+                  <input
+                    type="number"
+                    value={classForm.numericOrder}
+                    onChange={(e) => setClassForm({ ...classForm, numericOrder: Number(e.target.value) })}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-mono dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Class Incharge Teacher</label>
+                <select
+                  value={classForm.classTeacherId}
+                  onChange={(e) => setClassForm({ ...classForm, classTeacherId: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                >
+                  <option value="">Select Incharge Faculty</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.employeeId})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setIsClassModalOpen(false)}
+                  className="px-3.5 py-1.5 text-neutral-600 hover:bg-neutral-100 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 cursor-pointer shadow-xs"
+                >
+                  {editingClass ? 'Update Class' : 'Create Class'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Section Modal */}
+      {isSectionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-3">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                {editingSection ? 'Edit Section' : 'Add New Section'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsSectionModalOpen(false)}
+                className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSection} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Belongs to Class *</label>
+                <select
+                  value={sectionForm.classId}
+                  onChange={(e) => setSectionForm({ ...sectionForm, classId: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-medium dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                >
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.category || 'Co-Ed'})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Section Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. A, B, Blue, Red, Lotus"
+                  value={sectionForm.name}
+                  onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-medium dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Room Number</label>
+                  <input
+                    type="text"
+                    placeholder="Room 101"
+                    value={sectionForm.roomNumber}
+                    onChange={(e) => setSectionForm({ ...sectionForm, roomNumber: e.target.value })}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold">Max Student Capacity</label>
+                  <input
+                    type="number"
+                    value={sectionForm.capacity}
+                    onChange={(e) => setSectionForm({ ...sectionForm, capacity: Number(e.target.value) })}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-mono dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setIsSectionModalOpen(false)}
+                  className="px-3.5 py-1.5 text-neutral-600 hover:bg-neutral-100 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 cursor-pointer shadow-xs"
+                >
+                  {editingSection ? 'Update Section' : 'Create Section'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

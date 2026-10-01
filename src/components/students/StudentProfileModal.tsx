@@ -209,7 +209,16 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         </div>
 
         {/* Tab Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 relative">
+          {/* Official School Watermark */}
+          {settings.logoUrl && (
+            <img
+              src={settings.logoUrl}
+              alt="Watermark"
+              className="absolute inset-0 m-auto w-80 h-80 object-contain opacity-5 pointer-events-none select-none z-0"
+            />
+          )}
+          <div className="relative z-10">
           {activeSubTab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Biographical Details */}
@@ -489,6 +498,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

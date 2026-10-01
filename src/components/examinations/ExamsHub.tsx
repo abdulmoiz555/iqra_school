@@ -144,6 +144,9 @@ export const ExamsHub: React.FC = () => {
 
   const selectedExam = exams.find((e) => e.id === selectedExamId);
 
+  const canCreateExam = ['Super Admin', 'Admin'].includes(currentUser.role);
+  const canMarkStudents = ['Super Admin', 'Admin', 'Teacher'].includes(currentUser.role);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -381,15 +384,22 @@ export const ExamsHub: React.FC = () => {
       {activeTab === 'exams' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-              Scheduled Term Examinations
-            </h3>
-            <button
-              onClick={() => setIsAddExamOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs cursor-pointer"
-            >
-              <Plus className="h-4 w-4" /> Schedule New Exam
-            </button>
+            <div>
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Scheduled Term Examinations
+              </h3>
+              <p className="text-xs text-neutral-500">
+                Managed exclusively by Academic Admin and Super Admin
+              </p>
+            </div>
+            {canCreateExam && (
+              <button
+                onClick={() => setIsAddExamOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Schedule New Exam
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

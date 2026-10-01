@@ -40,7 +40,15 @@ export const ReportsHub: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Printable Watermark for Official School Reports */}
+      {settings.logoUrl && (
+        <img
+          src={settings.logoUrl}
+          alt="Watermark"
+          className="hidden print:block fixed inset-0 m-auto w-96 h-96 object-contain opacity-10 pointer-events-none select-none z-0"
+        />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

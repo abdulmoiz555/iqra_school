@@ -39,11 +39,18 @@ export const StudentAttendanceView: React.FC = () => {
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
   const [teacherSaveSuccess, setTeacherSaveSuccess] = useState(false);
 
-  // Strict RBAC: Attendance rights controlled exclusively by Super Admin, Admin, and assigned Class Teachers
-  const isSuperOrAdmin = ['Super Admin', 'Admin'].includes(currentUser.role);
-  const isAssignedClassTeacher = currentUser.role === 'Teacher' && isClassTeacher(currentUser.id);
-  const canControlStudentAttendance = isSuperOrAdmin || isAssignedClassTeacher;
-  const canControlTeacherAttendance = isSuperOrAdmin;
+  // Strict RBAC: Attendance rights controlled exclusively by Super Admin, Academic & Admissions Admin, and designated Class Teachers
+  const isSuperOrAdmin = ['Super Admin', 'Admin', 'Academic Admin', 'Admission Admin'].includes(currentUser.role);
+  const currentTeacher = teachers.find(
+    (t) => t.id === currentUser.linkedId || t.email === currentUser.email
+  );
+  const isClassTeacherRole =
+    currentUser.role === 'Teacher' &&
+    (currentTeacher?.teacherCategory === 'Class Teacher' ||
+      currentTeacher?.isClassTeacher ||
+      isClassTeacher(currentUser.id));
+  const canControlStudentAttendance = isSuperOrAdmin || isClassTeacherRole;
+  const canControlTeacherAttendance = ['Super Admin', 'Admin', 'Academic Admin', 'Admission Admin'].includes(currentUser.role);
   const canControlAttendance = canControlStudentAttendance;
 
   // Student list for current selected class and category
@@ -260,7 +267,7 @@ export const StudentAttendanceView: React.FC = () => {
                 : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
             }`}
           >
-            Teacher Attendance
+            Faculty & Teacher Attendance (Admissions & Academic Admin)
           </button>
         </div>
       </div>
@@ -276,7 +283,7 @@ export const StudentAttendanceView: React.FC = () => {
             </p>
           </div>
         </div>
-      ) : isAssignedClassTeacher && (
+      ) : isClassTeacherRole && (
         <div className="flex items-start gap-2.5 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200">
           <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
           <div>
@@ -505,7 +512,7 @@ export const StudentAttendanceView: React.FC = () => {
                 </div>
               </div>
 
-              {canControlAttendance && (
+              {canControlTeacherAttendance ? (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleMarkAllTeachersPresent}
@@ -521,6 +528,10 @@ export const StudentAttendanceView: React.FC = () => {
                     <Save className="h-3.5 w-3.5" />
                     Save Faculty Attendance
                   </button>
+                </div>
+              ) : (
+                <div className="text-[11px] text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300">
+                  Teacher roll call is officially managed by Admissions & Academic Admin.
                 </div>
               )}
             </div>

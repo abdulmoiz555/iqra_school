@@ -103,6 +103,7 @@ export const FeesHub: React.FC = () => {
     const sName = stu ? `${stu.firstName} ${stu.lastName}`.toLowerCase() : '';
     return (
       p.receiptNumber.toLowerCase().includes(q) ||
+      (p.trackingNumber && p.trackingNumber.toLowerCase().includes(q)) ||
       sName.includes(q) ||
       p.month.toLowerCase().includes(q) ||
       p.paymentMethod.toLowerCase().includes(q)
@@ -230,24 +231,29 @@ export const FeesHub: React.FC = () => {
       {/* Tab 1: Receipts History */}
       {activeTab === 'receipts' && (
         <div className="space-y-3">
-          <div className="rounded-xl border border-neutral-200 bg-white p-3 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
-            <div className="relative max-w-md">
+          <div className="rounded-xl border border-neutral-200 bg-white p-3 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400" />
               <input
                 type="text"
                 value={searchReceipt}
                 onChange={(e) => setSearchReceipt(e.target.value)}
-                placeholder="Search receipt #, student name, month, payment mode..."
+                placeholder="Track by Receipt #, Tracking No (e.g. TRK-2026-...), student name..."
                 className="w-full rounded-lg border border-neutral-200 bg-neutral-50 pl-8 pr-3 py-1.5 text-xs text-neutral-900 focus:border-blue-500 focus:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
               />
             </div>
+            {searchReceipt && (
+              <span className="text-xs text-neutral-500">
+                Found {filteredPayments.length} matching transactions
+              </span>
+            )}
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white shadow-xs overflow-hidden dark:border-neutral-800 dark:bg-neutral-900">
             <table className="w-full text-left text-xs">
               <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 dark:bg-neutral-800/60 dark:border-neutral-800 dark:text-neutral-300 font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Receipt #</th>
+                  <th className="py-3 px-4">Receipt & Tracking #</th>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Student</th>
                   <th className="py-3 px-4">Class</th>
@@ -264,11 +270,17 @@ export const FeesHub: React.FC = () => {
                 {filteredPayments.map((p) => {
                   const stu = students.find((s) => s.id === p.studentId);
                   const cls = stu ? classes.find((c) => c.id === stu.classId) : null;
+                  const trackNo = p.trackingNumber || `TRK-2026-${p.receiptNumber.slice(-4)}`;
 
                   return (
                     <tr key={p.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40">
-                      <td className="py-3 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                        {p.receiptNumber}
+                      <td className="py-3 px-4 font-mono">
+                        <div className="font-bold text-blue-600 dark:text-blue-400">
+                          {p.receiptNumber}
+                        </div>
+                        <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                          {trackNo}
+                        </div>
                       </td>
                       <td className="py-3 px-4 font-mono text-neutral-500">
                         {p.date}
@@ -465,14 +477,14 @@ export const FeesHub: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 font-mono">Child 1 (First/Elder)</span>
                   <span className="text-[10px] font-bold text-blue-700 bg-blue-50 dark:bg-blue-950 dark:text-blue-300 px-2 py-0.5 rounded-sm">
-                    Standard Fee
+                    {settings.siblingFirstChildPayPercent ?? 100}% Fee Pay
                   </span>
                 </div>
                 <div className="mt-2 text-xl font-bold font-mono text-neutral-800 dark:text-neutral-200">
-                  0% Concession
+                  {Math.max(0, 100 - (settings.siblingFirstChildPayPercent ?? 100))}% Concession
                 </div>
                 <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  Full standard tuition fee applied without discount as baseline enrollment.
+                  1st child pays {settings.siblingFirstChildPayPercent ?? 100}% of the standard monthly tuition fee.
                 </p>
               </div>
 
@@ -480,14 +492,14 @@ export const FeesHub: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-mono">Child 2 (2nd Sibling)</span>
                   <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 dark:bg-emerald-900/60 dark:text-emerald-300 px-2 py-0.5 rounded-sm">
-                    25% Off Tuition
+                    {settings.siblingSecondChildPayPercent ?? 50}% Fee Pay
                   </span>
                 </div>
                 <div className="mt-2 text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
-                  25% Sibling Waiver
+                  {Math.max(0, 100 - (settings.siblingSecondChildPayPercent ?? 50))}% Sibling Waiver
                 </div>
                 <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-                  25% direct concession deducted automatically on monthly tuition for the second child.
+                  2nd child pays {settings.siblingSecondChildPayPercent ?? 50}% ({Math.max(0, 100 - (settings.siblingSecondChildPayPercent ?? 50))}% concession deducted automatically on tuition).
                 </p>
               </div>
 
@@ -495,14 +507,16 @@ export const FeesHub: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400 font-mono">Child 3+ (3rd & More)</span>
                   <span className="text-[10px] font-bold text-purple-800 bg-purple-100 dark:bg-purple-900/60 dark:text-purple-300 px-2 py-0.5 rounded-sm">
-                    50% Half Fee
+                    {(settings.siblingThirdChildPayPercent ?? 0) === 0 ? '100% FREE' : `${settings.siblingThirdChildPayPercent}% Pay`}
                   </span>
                 </div>
                 <div className="mt-2 text-xl font-bold font-mono text-purple-700 dark:text-purple-400">
-                  50% Sibling Waiver
+                  {Math.max(0, 100 - (settings.siblingThirdChildPayPercent ?? 0))}% Sibling Waiver
                 </div>
                 <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-                  50% half-tuition relief awarded for third and subsequent children of the same parent.
+                  {(settings.siblingThirdChildPayPercent ?? 0) === 0
+                    ? '3rd and subsequent siblings are 100% FREE of charge.'
+                    : `3rd and subsequent siblings pay ${settings.siblingThirdChildPayPercent}% tuition.`}
                 </p>
               </div>
             </div>
@@ -561,17 +575,39 @@ export const FeesHub: React.FC = () => {
 
                 {/* Calculation breakdown */}
                 {(() => {
+                  const firstPay = settings.siblingFirstChildPayPercent ?? 100;
+                  const secondPay = settings.siblingSecondChildPayPercent ?? 50;
+                  const thirdPay = settings.siblingThirdChildPayPercent ?? 0;
                   let totalWithoutDiscount = calcBaseTuition * calcSiblingCount;
                   let childFees: { childNumber: number; fee: number; disc: number; label: string }[] = [];
+
                   for (let i = 1; i <= calcSiblingCount; i++) {
                     if (i === 1) {
-                      childFees.push({ childNumber: 1, fee: calcBaseTuition, disc: 0, label: '1st Child (100% Fee)' });
+                      const disc = calcBaseTuition * (Math.max(0, 100 - firstPay) / 100);
+                      childFees.push({
+                        childNumber: 1,
+                        fee: calcBaseTuition - disc,
+                        disc,
+                        label: `1st Child (Pays ${firstPay}%)`
+                      });
                     } else if (i === 2) {
-                      const disc = calcBaseTuition * 0.25;
-                      childFees.push({ childNumber: 2, fee: calcBaseTuition - disc, disc, label: '2nd Sibling (25% Off)' });
+                      const disc = calcBaseTuition * (Math.max(0, 100 - secondPay) / 100);
+                      childFees.push({
+                        childNumber: 2,
+                        fee: calcBaseTuition - disc,
+                        disc,
+                        label: `2nd Sibling (${Math.max(0, 100 - secondPay)}% Off, Pays ${secondPay}%)`
+                      });
                     } else {
-                      const disc = calcBaseTuition * 0.50;
-                      childFees.push({ childNumber: i, fee: calcBaseTuition - disc, disc, label: `${i}th Sibling (50% Off)` });
+                      const disc = calcBaseTuition * (Math.max(0, 100 - thirdPay) / 100);
+                      childFees.push({
+                        childNumber: i,
+                        fee: calcBaseTuition - disc,
+                        disc,
+                        label: thirdPay === 0
+                          ? `${i}th Sibling (100% FREE)`
+                          : `${i}th Sibling (${Math.max(0, 100 - thirdPay)}% Off, Pays ${thirdPay}%)`
+                      });
                     }
                   }
                   const totalWithDiscount = childFees.reduce((acc, c) => acc + c.fee, 0);
