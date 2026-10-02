@@ -81,16 +81,5 @@ http://localhost/school-management-system/
 
 ---
 
-## 4. Default Credentials (Development)
-
-| Persona / Role | Username | Password | Access Capabilities |
-| :--- | :--- | :--- | :--- |
-| **Super Admin** | `admin` | `admin123` | Full system control, settings, backup |
-| **Teacher** | `teacher` | `admin123` | Classes, marks entry, timetable |
-| **Accountant** | `accountant` | `admin123` | Fee collections, receipts, expenses |
-| **Librarian** | `librarian` | `admin123` | Book catalog, circulation desk |
-| **Receptionist** | `receptionist` | `admin123` | Admissions, inquiries, notices |
-| **Parent** | `parent` | `admin123` | Children profile, fees & results |
-| **Student** | `student` | `admin123` | Personal timetable, report cards |
 
 *Note: In production environments, immediately modify the administrator credentials and rotate session keys.*
