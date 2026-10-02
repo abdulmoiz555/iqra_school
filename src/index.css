@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   color-scheme: light;
@@ -15,15 +15,13 @@ body {
 }
 
 @media print {
-  /* Hide all background content when printing modal/receipt */
-  body.print-active #root > div > header,
-  body.print-active #root > div > div > aside,
-  body.print-active #root > div > div > main,
+  /* Navigation, header, sidebar, buttons, controls hidden during print */
   header,
   aside,
   nav,
   button,
-  .no-print {
+  .no-print,
+  .print-hide {
     display: none !important;
   }
 
@@ -37,13 +35,17 @@ body {
     print-color-adjust: exact !important;
   }
 
-  .print-only-container {
-    display: block !important;
+  /* When printing a modal (receipt or result card), make sure the modal container is visible and full width */
+  body.print-active {
+    background: #ffffff !important;
+  }
+
+  body.print-active .modal-backdrop-print {
+    background: transparent !important;
     position: static !important;
-    width: 100% !important;
-    margin: 0 !important;
     padding: 0 !important;
-    background: white !important;
+    margin: 0 !important;
+    overflow: visible !important;
   }
 
   @page {

@@ -64,6 +64,8 @@ export interface SchoolClass {
   numericOrder: number;
   category?: 'Co-Education' | 'Male' | 'Female'; // Co-Education, Boys (Male), Girls (Female)
   classTeacherId?: string;
+  transportVehicleId?: string; // Transport fleet vehicle assigned to this class
+  transportRouteId?: string;   // Transport route assigned to this class
 }
 
 export interface Section {

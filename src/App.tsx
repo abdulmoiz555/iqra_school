@@ -34,10 +34,10 @@ export const AppContent: React.FC = () => {
   const [portalMode, setPortalMode] = useState<'index' | 'signin' | 'portal'>('index');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Parent strict redirection: Parent only has access to My Children, Attendance, Fees, and Exams
+  // Parent and Student strict redirection: Only have access to My Profile/Children, Attendance, Fees, and Exams
   React.useEffect(() => {
     if (
-      currentUser.role === 'Parent' &&
+      (currentUser.role === 'Parent' || currentUser.role === 'Student') &&
       (activeTab === 'dashboard' || !['students', 'attendance', 'fees', 'examinations'].includes(activeTab))
     ) {
       setActiveTab('students');

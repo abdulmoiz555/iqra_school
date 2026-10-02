@@ -24,6 +24,11 @@ import {
 } from 'lucide-react';
 import { FeeCollectionModal } from './FeeCollectionModal';
 import { PrintReceiptModal } from '../common/PrintReceiptModal';
+import {
+  printReceiptViaIframe,
+  generateHalfA4VoucherHtml,
+  generateThermalPosSlipHtml
+} from '../../utils/printReceiptHelper';
 
 export const FeesHub: React.FC = () => {
   const {
@@ -36,6 +41,7 @@ export const FeesHub: React.FC = () => {
     addFeeType,
     students,
     classes,
+    sections,
     parents,
     settings,
     currentUser,
@@ -124,7 +130,257 @@ export const FeesHub: React.FC = () => {
     );
   });
 
-  const canManage = ['Super Admin', 'Admin', 'Accountant'].includes(currentUser.role);
+  // =========================================================================
+  // VIEW-ONLY PARENT & STUDENT FEE PORTAL
+  // Strictly scoped to their children / own vouchers only.
+  // View-only mode with edit and print options removed as requested.
+  // =========================================================================
+  if (isParent || isStudent) {
+    return (
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              {isParent ? "Children's Fee Status & Remaining Dues" : "My Fee Status & Remaining Dues"}
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {isParent
+                ? "Official school fee records, monthly tuition status, and outstanding balances for your enrolled children (View-Only Portal)"
+                : "Your personal academic fee records and remaining dues (View-Only Portal)"}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+            View-Only Access
+          </span>
+        </div>
+
+        {/* Private Metrics: Only for this parent's children */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Outstanding Remaining Dues */}
+          <div className={`rounded-xl border p-4 shadow-xs ${
+            myTotalPendingBalance > 0
+              ? 'border-rose-200 bg-rose-50/60 dark:border-rose-900/60 dark:bg-rose-950/30'
+              : 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-950/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${
+                myTotalPendingBalance > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'
+              }`}>
+                {myTotalPendingBalance > 0 ? 'Remaining Fees / Balance Due' : 'Fee Clearance Status'}
+              </span>
+              <div className={`p-1.5 rounded-lg ${
+                myTotalPendingBalance > 0 ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/60' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60'
+              }`}>
+                <AlertCircle className="h-4 w-4" />
+              </div>
+            </div>
+            <div className={`mt-2 text-2xl font-bold font-mono tabular-nums ${
+              myTotalPendingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+            }`}>
+              {settings.currencySymbol}{myTotalPendingBalance.toLocaleString()}
+            </div>
+            <p className="mt-1 text-[11px] text-neutral-500 font-medium">
+              {myTotalPendingBalance > 0
+                ? 'Outstanding balance payable at Campus Accounts Office / Bank'
+                : 'All dues cleared. No pending arrears!'}
+            </p>
+          </div>
+
+          {/* Total Paid */}
+          <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neutral-500">Total Fees Paid to Date</span>
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="mt-2 text-2xl font-bold font-mono text-neutral-900 dark:text-neutral-100 tabular-nums">
+              {settings.currencySymbol}{myTotalPaid.toLocaleString()}
+            </div>
+            <p className="mt-1 text-[11px] text-neutral-400 font-mono">
+              {myPayments.length} fee transaction records
+            </p>
+          </div>
+
+          {/* Children / Student Info */}
+          <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neutral-500">{isParent ? "Enrolled Children" : "Academic Class"}</span>
+              <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+                <Users className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="mt-2 text-xl font-bold text-neutral-900 dark:text-neutral-100 truncate">
+              {isParent
+                ? `${myChildren.length} Children Enrolled`
+                : (classes.find(c => c.id === students.find(s => s.id === currentUser.linkedId)?.classId)?.name || 'Class')}
+            </div>
+            <p className="mt-1 text-[11px] text-neutral-400">
+              {isParent ? myChildren.map(c => `${c.firstName} ${c.lastName}`).join(', ') : currentUser.name}
+            </p>
+          </div>
+        </div>
+
+        {/* Children Fee Breakdown Cards (For Parents with multiple children) */}
+        {isParent && myChildren.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-600" />
+              Individual Child Fee Breakdown
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {myChildren.map((child) => {
+                const childClass = classes.find((c) => c.id === child.classId);
+                const childPayments = feePayments.filter((p) => p.studentId === child.id);
+                const childPending = childPayments.reduce((acc, p) => acc + p.balanceAmount, 0);
+                const childPaid = childPayments.reduce((acc, p) => acc + p.paidAmount, 0);
+
+                return (
+                  <div
+                    key={child.id}
+                    className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        {child.photoUrl ? (
+                          <img
+                            src={child.photoUrl}
+                            alt={child.firstName}
+                            className="h-10 w-10 rounded-full object-cover border border-neutral-200"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xs">
+                            {child.firstName[0]}
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                            {child.firstName} {child.lastName}
+                          </h4>
+                          <p className="text-[11px] text-neutral-500 font-mono">
+                            Roll #{child.rollNumber} · Adm #{child.admissionNumber}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                        {childClass?.name || 'Class'} ({child.category || 'Co-Ed'})
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 text-xs">
+                      <div className="p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                        <span className="text-[10px] text-neutral-400 block">Remaining Due</span>
+                        <span className={`font-mono font-bold text-sm ${childPending > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          {settings.currencySymbol}{childPending.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                        <span className="text-[10px] text-neutral-400 block">Total Paid</span>
+                        <span className="font-mono font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                          {settings.currencySymbol}{childPaid.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {child.siblingDiscountPercent ? (
+                      <p className="text-[11px] text-emerald-600 font-medium">
+                        ✓ {child.siblingDiscountPercent}% Sibling Concession Applied
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Private Receipts & Vouchers Table (View-Only, No Print button for Student/Parent) */}
+        <div className="rounded-xl border border-neutral-200 bg-white shadow-xs overflow-hidden dark:border-neutral-800 dark:bg-neutral-900 space-y-3 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-emerald-600" />
+              Fee Records & Status History ({myPayments.length})
+            </h3>
+            <span className="text-xs text-neutral-400 font-mono">
+              Records verified by Accounts Office
+            </span>
+          </div>
+
+          {myPayments.length === 0 ? (
+            <div className="py-8 text-center text-xs text-neutral-400">
+              No fee records found for this academic session.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:border-neutral-700 font-semibold">
+                  <tr>
+                    <th className="py-2.5 px-3">Receipt / Voucher #</th>
+                    <th className="py-2.5 px-3">Student</th>
+                    <th className="py-2.5 px-3 font-mono">Billing Month</th>
+                    <th className="py-2.5 px-3">Total Amount</th>
+                    <th className="py-2.5 px-3">Paid Amount</th>
+                    <th className="py-2.5 px-3">Remaining Balance</th>
+                    <th className="py-2.5 px-3">Payment Method</th>
+                    <th className="py-2.5 px-3 text-right">Clearance Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  {myPayments.map((p) => {
+                    const stu = students.find((s) => s.id === p.studentId);
+                    const isFullyPaid = p.balanceAmount <= 0;
+
+                    return (
+                      <tr key={p.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
+                        <td className="py-2.5 px-3 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                          {p.receiptNumber}
+                        </td>
+                        <td className="py-2.5 px-3 font-medium text-neutral-900 dark:text-neutral-100">
+                          {stu ? `${stu.firstName} ${stu.lastName}` : 'Child'}
+                          <span className="block text-[10px] text-neutral-400 font-mono">
+                            Roll #{stu?.rollNumber}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">{p.month} {p.year}</td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {settings.currencySymbol}{p.totalAmount.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
+                          {settings.currencySymbol}{p.paidAmount.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold">
+                          <span className={p.balanceAmount > 0 ? 'text-rose-600' : 'text-emerald-600'}>
+                            {settings.currencySymbol}{p.balanceAmount.toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-800 text-[10px] font-medium">
+                            {p.paymentMethod}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            isFullyPaid
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                          }`}>
+                            {isFullyPaid ? 'Paid in Full' : 'Balance Due'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -141,6 +397,32 @@ export const FeesHub: React.FC = () => {
 
         {canManage && (
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (feePayments.length > 0) {
+                  const p = feePayments[0];
+                  const stu = students.find((s) => s.id === p.studentId);
+                  const c = stu ? classes.find((cls) => cls.id === stu.classId) : null;
+                  const sec = stu ? sections.find((s) => s.id === stu.sectionId) : null;
+                  const par = stu ? parents.find((pr) => pr.id === stu.parentId) : null;
+                  const html = generateThermalPosSlipHtml({
+                    payment: p,
+                    student: stu,
+                    cls: c,
+                    sec,
+                    parent: par,
+                    settings,
+                    feeTypes,
+                  });
+                  printReceiptViaIframe(html);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-neutral-800 cursor-pointer shadow-2xs"
+              title="Print 80mm POS Thermal Fee Slip"
+            >
+              <Printer className="h-3.5 w-3.5 text-emerald-400" />
+              Print POS Slip
+            </button>
             <button
               onClick={() => {
                 if (feePayments.length > 0) {
@@ -325,15 +607,40 @@ export const FeesHub: React.FC = () => {
                           {p.paymentMethod}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => setSelectedPaymentForPrint(p)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600/30 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 cursor-pointer transition-colors shadow-2xs"
-                          title="Print Watermarked Fee Invoice"
-                        >
-                          <Printer className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>Print Invoice</span>
-                        </button>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => {
+                              const stu = students.find((s) => s.id === p.studentId);
+                              const c = stu ? classes.find((cls) => cls.id === stu.classId) : null;
+                              const sec = stu ? sections.find((s) => s.id === stu.sectionId) : null;
+                              const par = stu ? parents.find((pr) => pr.id === stu.parentId) : null;
+                              const html = generateThermalPosSlipHtml({
+                                payment: p,
+                                student: stu,
+                                cls: c,
+                                sec,
+                                parent: par,
+                                settings,
+                                feeTypes,
+                              });
+                              printReceiptViaIframe(html);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-neutral-800 cursor-pointer transition-colors shadow-2xs"
+                            title="Directly Print 80mm POS Thermal Slip"
+                          >
+                            <Printer className="h-3 w-3 text-emerald-400" />
+                            <span>POS Slip</span>
+                          </button>
+                          <button
+                            onClick={() => setSelectedPaymentForPrint(p)}
+                            className="inline-flex items-center gap-1 rounded-md border border-emerald-600/30 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 cursor-pointer transition-colors shadow-2xs"
+                            title="Print Watermarked Half-A4 Fee Invoice Voucher"
+                          >
+                            <Printer className="h-3 w-3 text-emerald-600" />
+                            <span>Voucher</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -899,6 +1206,15 @@ export const FeesHub: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Print Receipt Modal for Accountant, Principal & Academic Admin */}
+      {selectedPaymentForPrint && (
+        <PrintReceiptModal
+          isOpen={Boolean(selectedPaymentForPrint)}
+          onClose={() => setSelectedPaymentForPrint(null)}
+          payment={selectedPaymentForPrint}
+        />
       )}
     </div>
   );

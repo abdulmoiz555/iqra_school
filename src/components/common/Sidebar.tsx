@@ -19,7 +19,9 @@ import {
   Settings,
   ChevronRight,
   ShieldAlert,
-  Clock
+  Clock,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -37,7 +39,7 @@ interface NavItem {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { activeTab, setActiveTab, currentUser, settings, students, feePayments, notices, parents } = useApp();
+  const { activeTab, setActiveTab, currentUser, settings, students, feePayments, notices, parents, darkMode, setDarkMode } = useApp();
 
   const isParent = currentUser.role === 'Parent';
   const parentRecord = parents.find((p) => p.id === currentUser.linkedId || p.email === currentUser.email);
@@ -48,11 +50,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist'],
     },
     {
       id: 'students',
-      label: currentUser.role === 'Student' ? 'My Profile & ID' : isParent ? 'My Children' : 'Students',
+      label: currentUser.role === 'Student' ? 'My Profile' : isParent ? 'My Children' : 'Students',
       icon: GraduationCap,
       allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Receptionist', 'Parent', 'Student'],
       badge: isParent ? `${myChildren.length}` : `${students.length}`,
@@ -79,17 +81,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'academics',
       label: 'Academics & Timetable',
       icon: BookOpen,
-      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Teacher'],
     },
     {
       id: 'attendance',
-      label: isParent ? "Child's Attendance" : 'Attendance',
+      label: isParent ? "Child's Attendance" : currentUser.role === 'Student' ? 'My Attendance' : 'Attendance',
       icon: CalendarCheck,
       allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Parent', 'Student'],
     },
     {
       id: 'fees',
-      label: isParent ? 'Remaining Fees & Dues' : currentUser.role === 'Student' ? 'My Fee Vouchers' : 'Fees & Finance',
+      label: isParent ? 'Remaining Fees & Dues' : currentUser.role === 'Student' ? 'My Remaining Fees' : 'Fees & Finance',
       icon: CreditCard,
       allowedRoles: ['Super Admin', 'Admin', 'Accountant', 'Receptionist', 'Parent', 'Student'],
       badge: isParent
@@ -98,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     },
     {
       id: 'examinations',
-      label: isParent ? "Child's Exam Marks" : currentUser.role === 'Student' ? 'Exam Results' : 'Examinations & Marks',
+      label: isParent ? "Child's Exam Marks" : currentUser.role === 'Student' ? 'My Exam Marks' : 'Examinations & Marks',
       icon: Award,
       allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Parent', 'Student'],
     },
@@ -106,13 +108,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'library',
       label: 'Library',
       icon: Library,
-      allowedRoles: ['Super Admin', 'Admin', 'Librarian', 'Teacher', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Librarian', 'Teacher'],
     },
     {
       id: 'transport',
       label: 'Transport',
       icon: Bus,
-      allowedRoles: ['Super Admin', 'Admin', 'Receptionist', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Receptionist'],
     },
     {
       id: 'inventory',
@@ -130,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       id: 'communication',
       label: 'Notices & Messages',
       icon: Megaphone,
-      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist', 'Student'],
+      allowedRoles: ['Super Admin', 'Admin', 'Teacher', 'Accountant', 'Librarian', 'Receptionist'],
       badge: `${notices.length}`,
     },
     {
@@ -218,8 +220,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           })}
         </div>
 
-        {/* Footer session info */}
-        <div className="border-t border-neutral-200 p-3 dark:border-neutral-800">
+        {/* Footer session info & theme switcher */}
+        <div className="border-t border-neutral-200 p-3 dark:border-neutral-800 space-y-2">
+          {/* Quick Light / Dark Mode Toggle */}
+          <div className="flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-100/90 p-1 dark:border-neutral-700 dark:bg-neutral-800">
+            <button
+              type="button"
+              onClick={() => setDarkMode(false)}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-semibold transition-all cursor-pointer ${
+                !darkMode
+                  ? 'bg-white text-neutral-900 shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
+                  : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400'
+              }`}
+              title="Switch to Light Theme"
+            >
+              <Sun className={`h-3.5 w-3.5 ${!darkMode ? 'text-amber-500' : 'text-neutral-400'}`} />
+              <span>Light</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDarkMode(true)}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-semibold transition-all cursor-pointer ${
+                darkMode
+                  ? 'bg-neutral-900 text-white shadow-xs dark:bg-neutral-950 dark:text-neutral-100'
+                  : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400'
+              }`}
+              title="Switch to Dark Theme"
+            >
+              <Moon className={`h-3.5 w-3.5 ${darkMode ? 'text-indigo-400' : 'text-neutral-400'}`} />
+              <span>Dark</span>
+            </button>
+          </div>
+
           <div className="rounded-lg bg-neutral-50 p-2.5 dark:bg-neutral-800/60 border border-neutral-100 dark:border-neutral-800">
             <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-900 dark:text-neutral-100">
               <span className="flex items-center gap-1">

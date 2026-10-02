@@ -37,6 +37,7 @@ export const TransportView: React.FC = () => {
     deleteRoute,
     settings,
     classes,
+    updateClass,
     students,
     currentUser,
   } = useApp();
@@ -55,6 +56,7 @@ export const TransportView: React.FC = () => {
   const [vehCapacity, setVehCapacity] = useState(30);
   const [vehDriverId, setVehDriverId] = useState('');
   const [vehStatus, setVehStatus] = useState<Vehicle['status']>('Active');
+  const [vehAssignedClassIds, setVehAssignedClassIds] = useState<string[]>([]);
 
   // Route Modal state
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
@@ -93,6 +95,7 @@ export const TransportView: React.FC = () => {
     setVehCapacity(32);
     setVehDriverId(drivers[0]?.id || '');
     setVehStatus('Active');
+    setVehAssignedClassIds([]);
     setIsVehicleModalOpen(true);
   };
 
@@ -104,12 +107,15 @@ export const TransportView: React.FC = () => {
     setVehCapacity(v.capacity);
     setVehDriverId(v.driverId);
     setVehStatus(v.status);
+    setVehAssignedClassIds(classes.filter((c) => c.transportVehicleId === v.id).map((c) => c.id));
     setIsVehicleModalOpen(true);
   };
 
   const handleSaveVehicle = (e: React.FormEvent) => {
     e.preventDefault();
     if (!vehNumber.trim()) return;
+
+    const targetVehId = editingVehicle ? editingVehicle.id : `veh-${Date.now()}`;
 
     if (editingVehicle) {
       updateVehicle(editingVehicle.id, {
@@ -132,6 +138,17 @@ export const TransportView: React.FC = () => {
       });
       showToast(`Successfully added vehicle ${vehNumber} to transport fleet`);
     }
+
+    // Sync class vehicle assignments
+    classes.forEach((cls) => {
+      const isSelected = vehAssignedClassIds.includes(cls.id);
+      if (isSelected && cls.transportVehicleId !== targetVehId) {
+        updateClass(cls.id, { transportVehicleId: targetVehId });
+      } else if (!isSelected && cls.transportVehicleId === targetVehId) {
+        updateClass(cls.id, { transportVehicleId: undefined });
+      }
+    });
+
     setIsVehicleModalOpen(false);
   };
 
@@ -157,7 +174,7 @@ export const TransportView: React.FC = () => {
     setRouteFare(r.fareMonthly);
     setRouteVehicleId(r.vehicleId);
     setRouteStops(r.stops ? r.stops.join(', ') : '');
-    setRouteAssignedClasses(r.assignedClassIds || []);
+    setRouteAssignedClasses(classes.filter((c) => c.transportRouteId === r.id || r.assignedClassIds?.includes(c.id)).map((c) => c.id));
     setRouteNotes(r.notes || '');
     setIsRouteModalOpen(true);
   };
@@ -170,6 +187,8 @@ export const TransportView: React.FC = () => {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
+
+    const targetRouteId = editingRoute ? editingRoute.id : `rt-${Date.now()}`;
 
     if (editingRoute) {
       updateRoute(editingRoute.id, {
@@ -196,6 +215,17 @@ export const TransportView: React.FC = () => {
       });
       showToast(`Created route ${routeName} servicing ${routeAssignedClasses.length} classes`);
     }
+
+    // Sync class route assignments
+    classes.forEach((cls) => {
+      const isSelected = routeAssignedClasses.includes(cls.id);
+      if (isSelected && cls.transportRouteId !== targetRouteId) {
+        updateClass(cls.id, { transportRouteId: targetRouteId });
+      } else if (!isSelected && cls.transportRouteId === targetRouteId) {
+        updateClass(cls.id, { transportRouteId: undefined });
+      }
+    });
+
     setIsRouteModalOpen(false);
   };
 
@@ -533,6 +563,7 @@ export const TransportView: React.FC = () => {
                   <th className="py-2.5 px-3">Vehicle Type</th>
                   <th className="py-2.5 px-3 font-mono">Seat Capacity</th>
                   <th className="py-2.5 px-3">Assigned Driver</th>
+                  <th className="py-2.5 px-3">Assigned Classes</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
@@ -540,6 +571,8 @@ export const TransportView: React.FC = () => {
               <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {vehicles.map((v) => {
                   const driver = drivers.find((d) => d.id === v.driverId);
+                  const assigned = classes.filter((c) => c.transportVehicleId === v.id);
+
                   return (
                     <tr key={v.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40">
                       <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
@@ -558,6 +591,22 @@ export const TransportView: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-3 font-medium text-neutral-800 dark:text-neutral-200">
                         {driver?.name || 'Unassigned'}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {assigned.length === 0 ? (
+                            <span className="text-[11px] text-neutral-400 italic">None</span>
+                          ) : (
+                            assigned.map((c) => (
+                              <span
+                                key={c.id}
+                                className="px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-semibold border border-blue-200 dark:border-blue-900"
+                              >
+                                {c.name}
+                              </span>
+                            ))
+                          )}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -782,6 +831,37 @@ export const TransportView: React.FC = () => {
                   <option value="Maintenance">In Maintenance / Workshop</option>
                   <option value="Inactive">Inactive</option>
                 </select>
+              </div>
+
+              {/* Linked Academic Classes for this Fleet Vehicle */}
+              <div>
+                <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold flex items-center justify-between">
+                  <span>Assigned Classes (Using this Vehicle)</span>
+                  <span className="text-[10px] text-neutral-400 font-normal">Click class to toggle</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800">
+                  {classes.map((cls) => {
+                    const isAssigned = vehAssignedClassIds.includes(cls.id);
+                    return (
+                      <button
+                        key={cls.id}
+                        type="button"
+                        onClick={() => {
+                          setVehAssignedClassIds((prev) =>
+                            isAssigned ? prev.filter((id) => id !== cls.id) : [...prev, cls.id]
+                          );
+                        }}
+                        className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                          isAssigned
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-300 dark:border-neutral-700'
+                        }`}
+                      >
+                        {cls.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">

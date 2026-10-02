@@ -43,7 +43,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     subjects,
     studentAttendance,
     settings,
+    currentUser,
   } = useApp();
+
+  const isStudentOrParent = currentUser.role === 'Student' || currentUser.role === 'Parent';
 
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'fees' | 'exams' | 'attendance' | 'documents'>('overview');
 
@@ -85,20 +88,24 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onGenerateIdCard(student)}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer"
-            >
-              <CreditCard className="h-3.5 w-3.5" />
-              ID Card
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Print
-            </button>
+            {!isStudentOrParent && (
+              <>
+                <button
+                  onClick={() => onGenerateIdCard(student)}
+                  className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer"
+                >
+                  <CreditCard className="h-3.5 w-3.5" />
+                  ID Card
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 cursor-pointer"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Print
+                </button>
+              </>
+            )}
             <button
               onClick={onClose}
               className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 cursor-pointer"

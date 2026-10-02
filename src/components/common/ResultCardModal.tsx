@@ -16,7 +16,8 @@ export const ResultCardModal: React.FC<ResultCardModalProps> = ({
   student,
   exam,
 }) => {
-  const { settings, marks, subjects, classes, sections, parents, gradingRules } = useApp();
+  const { settings, marks, subjects, classes, sections, parents, gradingRules, currentUser } = useApp();
+  const isStudentOrParent = currentUser.role === 'Student' || currentUser.role === 'Parent';
 
   if (!isOpen || !student || !exam) return null;
 
@@ -58,12 +59,14 @@ export const ResultCardModal: React.FC<ResultCardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs cursor-pointer"
-            >
-              <Printer className="h-3.5 w-3.5" /> Print Result Card
-            </button>
+            {!isStudentOrParent && (
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs cursor-pointer"
+              >
+                <Printer className="h-3.5 w-3.5" /> Print Result Card
+              </button>
+            )}
             <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800">
               <X className="h-5 w-5" />
             </button>

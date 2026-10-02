@@ -21,7 +21,9 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Check,
-  Sparkles
+  Sparkles,
+  Bus,
+  MapPin
 } from 'lucide-react';
 import { TimetableView } from './TimetableView';
 import { AssignmentsView } from './AssignmentsView';
@@ -49,6 +51,8 @@ export const AcademicsHub: React.FC = () => {
     studentAttendance,
     marks,
     exams,
+    vehicles,
+    routes,
     currentUser,
   } = useApp();
 
@@ -61,6 +65,8 @@ export const AcademicsHub: React.FC = () => {
   const [newClassOrder, setNewClassOrder] = useState(1);
   const [newClassCategory, setNewClassCategory] = useState<'Co-Education' | 'Male' | 'Female'>('Co-Education');
   const [newClassTeacherId, setNewClassTeacherId] = useState('');
+  const [newClassVehicleId, setNewClassVehicleId] = useState('');
+  const [newClassRouteId, setNewClassRouteId] = useState('');
 
   // Modal states for Section
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
@@ -89,7 +95,7 @@ export const AcademicsHub: React.FC = () => {
 
   // Class Details Hub Modal (Deep Class Inspection & Subject Teacher Multi-Class Assignment)
   const [selectedClassForDetails, setSelectedClassForDetails] = useState<SchoolClass | null>(null);
-  const [classDetailTab, setClassDetailTab] = useState<'students' | 'teachers' | 'sections' | 'attendance' | 'exams'>('students');
+  const [classDetailTab, setClassDetailTab] = useState<'students' | 'teachers' | 'sections' | 'attendance' | 'exams' | 'transport'>('students');
   const [studentSearchInClass, setStudentSearchInClass] = useState('');
 
   // Assign Subject Teacher within Class Detail
@@ -121,6 +127,8 @@ export const AcademicsHub: React.FC = () => {
     setNewClassOrder(classes.length + 1);
     setNewClassCategory('Co-Education');
     setNewClassTeacherId(teachers[0]?.id || '');
+    setNewClassVehicleId(vehicles[0]?.id || '');
+    setNewClassRouteId(routes[0]?.id || '');
     setIsClassModalOpen(true);
   };
 
@@ -130,6 +138,8 @@ export const AcademicsHub: React.FC = () => {
     setNewClassOrder(cls.numericOrder);
     setNewClassCategory(cls.category || 'Co-Education');
     setNewClassTeacherId(cls.classTeacherId || '');
+    setNewClassVehicleId(cls.transportVehicleId || '');
+    setNewClassRouteId(cls.transportRouteId || '');
     setIsClassModalOpen(true);
   };
 
@@ -142,18 +152,24 @@ export const AcademicsHub: React.FC = () => {
         numericOrder: Number(newClassOrder),
         category: newClassCategory,
         classTeacherId: newClassTeacherId || undefined,
+        transportVehicleId: newClassVehicleId || undefined,
+        transportRouteId: newClassRouteId || undefined,
       });
-      showToast(`Updated class: "${newClassName.trim()}"`);
+      showToast(`Updated class "${newClassName.trim()}" and transport assignment.`);
     } else {
       addClass({
         name: newClassName.trim(),
         numericOrder: Number(newClassOrder),
         category: newClassCategory,
         classTeacherId: newClassTeacherId || undefined,
+        transportVehicleId: newClassVehicleId || undefined,
+        transportRouteId: newClassRouteId || undefined,
       });
-      showToast(`Successfully created class: "${newClassName.trim()}" (${newClassCategory})`);
+      showToast(`Successfully created class "${newClassName.trim()}" with transport.`);
     }
     setNewClassName('');
+    setNewClassVehicleId('');
+    setNewClassRouteId('');
     setEditingClass(null);
     setIsClassModalOpen(false);
   };
@@ -492,6 +508,43 @@ export const AcademicsHub: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Transport Fleet Vehicle & Route Option */}
+                  {(() => {
+                    const clsVeh = vehicles.find((v) => v.id === cls.transportVehicleId);
+                    const clsRoute = routes.find((r) => r.id === cls.transportRouteId);
+
+                    return (
+                      <div className="mt-3 rounded-lg bg-neutral-50 p-2 dark:bg-neutral-800/60 border border-neutral-100 dark:border-neutral-800/80 space-y-1 text-xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
+                            <Bus className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            Fleet Vehicle:
+                          </span>
+                          {clsVeh ? (
+                            <span className="font-bold text-neutral-900 dark:text-neutral-100 font-mono">
+                              {clsVeh.vehicleType} ({clsVeh.vehicleNumber}) · {clsVeh.capacity} Seats
+                            </span>
+                          ) : (
+                            <span className="text-neutral-400 italic">Self Transport</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-semibold text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
+                            <MapPin className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            Transit Route:
+                          </span>
+                          {clsRoute ? (
+                            <span className="font-medium text-emerald-700 dark:text-emerald-300 truncate max-w-[190px]" title={clsRoute.name}>
+                              {clsRoute.name}
+                            </span>
+                          ) : (
+                            <span className="text-neutral-400 italic">No Route</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Bottom Action: Open Class Hub & View Students */}
                   <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] text-neutral-500 font-mono">
@@ -737,6 +790,7 @@ export const AcademicsHub: React.FC = () => {
                 { id: 'sections', label: `Sections (${sections.filter((s) => s.classId === selectedClassForDetails.id).length})` },
                 { id: 'attendance', label: 'Attendance Roll Call' },
                 { id: 'exams', label: 'Exam Results' },
+                { id: 'transport', label: 'Transport Fleet & Route' },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -1204,6 +1258,95 @@ export const AcademicsHub: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* TAB 6: Transport Fleet & Route Option */}
+              {classDetailTab === 'transport' && (() => {
+                const clsVeh = vehicles.find((v) => v.id === selectedClassForDetails.transportVehicleId);
+                const clsRoute = routes.find((r) => r.id === selectedClassForDetails.transportRouteId);
+
+                return (
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                          <Bus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          Transport Fleet Vehicle & Transit Route Option
+                        </h4>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                          Fleet vehicle allocation, capacity, and designated pickup/drop transit route for {selectedClassForDetails.name}
+                        </p>
+                      </div>
+                      {canManage && (
+                        <button
+                          onClick={() => handleOpenEditClass(selectedClassForDetails)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 cursor-pointer shadow-xs"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Edit Transport Option
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Vehicle Card */}
+                      <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-3">
+                        <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2">
+                          <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                            <Bus className="h-4 w-4 text-blue-600" />
+                            Allocated Fleet Vehicle
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            clsVeh ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300' : 'bg-neutral-100 text-neutral-500'
+                          }`}>
+                            {clsVeh ? `${clsVeh.status} Fleet` : 'Not Assigned'}
+                          </span>
+                        </div>
+                        {clsVeh ? (
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between"><span className="text-neutral-500">Vehicle Type:</span><strong className="text-neutral-900 dark:text-neutral-100">{clsVeh.vehicleType}</strong></div>
+                            <div className="flex justify-between"><span className="text-neutral-500">Number Plate:</span><strong className="font-mono text-neutral-900 dark:text-neutral-100">{clsVeh.vehicleNumber}</strong></div>
+                            <div className="flex justify-between"><span className="text-neutral-500">Registration:</span><span className="font-mono text-neutral-600 dark:text-neutral-400">{clsVeh.registrationNumber}</span></div>
+                            <div className="flex justify-between"><span className="text-neutral-500">Passenger Capacity:</span><strong className="text-neutral-900 dark:text-neutral-100">{clsVeh.capacity} Seats</strong></div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-5 text-neutral-400">
+                            <p className="text-xs">No fleet vehicle currently linked.</p>
+                            <p className="text-[11px] mt-1 text-blue-600 cursor-pointer" onClick={() => handleOpenEditClass(selectedClassForDetails)}>Click "Edit Transport Option" to assign a bus/van.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Route Card */}
+                      <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-3">
+                        <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2">
+                          <span className="font-bold text-xs text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4 text-emerald-600" />
+                            Designated Transit Route
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            clsRoute ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-neutral-100 text-neutral-500'
+                          }`}>
+                            {clsRoute ? `Rs. ${clsRoute.fareMonthly}/mo` : 'Not Assigned'}
+                          </span>
+                        </div>
+                        {clsRoute ? (
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between"><span className="text-neutral-500">Route Name:</span><strong className="text-neutral-900 dark:text-neutral-100">{clsRoute.name}</strong></div>
+                            <div className="flex justify-between"><span className="text-neutral-500">Pickup Area:</span><span className="text-neutral-800 dark:text-neutral-200">{clsRoute.pickupLocation}</span></div>
+                            <div className="flex justify-between"><span className="text-neutral-500">Drop Destination:</span><span className="text-neutral-800 dark:text-neutral-200">{clsRoute.dropLocation}</span></div>
+                            <div className="flex justify-between"><span className="text-neutral-500">Fare:</span><strong className="text-emerald-600 font-mono">Rs. {clsRoute.fareMonthly.toLocaleString()} / month</strong></div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-5 text-neutral-400">
+                            <p className="text-xs">No transit route assigned.</p>
+                            <p className="text-[11px] mt-1 text-blue-600 cursor-pointer" onClick={() => handleOpenEditClass(selectedClassForDetails)}>Click "Edit Transport Option" to select a route.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -1277,6 +1420,46 @@ export const AcademicsHub: React.FC = () => {
                     <option key={t.id} value={t.id}>{t.name} ({t.employeeId})</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Transport Fleet Vehicle & Transit Route Option */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold flex items-center gap-1">
+                    <Bus className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    Transport Fleet Vehicle
+                  </label>
+                  <select
+                    value={newClassVehicleId}
+                    onChange={(e) => setNewClassVehicleId(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  >
+                    <option value="">No Fleet Vehicle Assigned</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.vehicleType}: {v.vehicleNumber} ({v.capacity} Seats)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Transport Transit Route
+                  </label>
+                  <select
+                    value={newClassRouteId}
+                    onChange={(e) => setNewClassRouteId(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  >
+                    <option value="">No Transit Route Assigned</option>
+                    {routes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} (Rs. {r.fareMonthly}/mo)
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">

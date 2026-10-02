@@ -14,32 +14,17 @@ import {
   Scissors,
   ExternalLink
 } from 'lucide-react';
+import {
+  printReceiptViaIframe,
+  generateHalfA4VoucherHtml,
+  generateThermalPosSlipHtml,
+  numberToWords
+} from '../../utils/printReceiptHelper';
 
 interface PrintReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   payment: FeePayment | null;
-}
-
-// Convert numbers to words (e.g. 4500 -> "Four Thousand Five Hundred")
-function numberToWords(num: number): string {
-  if (!num || num === 0) return 'Zero';
-  const a = [
-    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
-  ];
-  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-
-  function inWords(n: number): string {
-    if (n < 20) return a[n];
-    if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '');
-    if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' and ' + inWords(n % 100) : '');
-    if (n < 100000) return inWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + inWords(n % 1000) : '');
-    if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + inWords(n % 100000) : '');
-    return inWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + inWords(n % 10000000) : '');
-  }
-
-  return inWords(Math.round(num));
 }
 
 export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
@@ -77,8 +62,40 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
   // Calculation in words
   const amountInWords = numberToWords(payment.paidAmount > 0 ? payment.paidAmount : payableWithinDueDate);
 
+  const printHalfA4 = () => {
+    setReceiptFormat('half-a4-split');
+    const html = generateHalfA4VoucherHtml({
+      payment,
+      student,
+      cls,
+      sec,
+      parent,
+      settings,
+      feeTypes,
+    });
+    printReceiptViaIframe(html);
+  };
+
+  const printPosSlip = () => {
+    setReceiptFormat('thermal');
+    const html = generateThermalPosSlipHtml({
+      payment,
+      student,
+      cls,
+      sec,
+      parent,
+      settings,
+      feeTypes,
+    });
+    printReceiptViaIframe(html);
+  };
+
   const handlePrint = () => {
-    window.print();
+    if (receiptFormat === 'thermal') {
+      printPosSlip();
+    } else {
+      printHalfA4();
+    }
   };
 
   // Robust Standalone Print View (ensures 100% reliability in iframe preview)
@@ -584,18 +601,23 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto print:static print:p-0 print:m-0 print:bg-white print:overflow-visible">
-      {/* Hidden print style ensuring clean single/half-page print */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto modal-backdrop-print print:static print:p-0 print:m-0 print:bg-white print:overflow-visible">
+      {/* Hidden print style ensuring clean single/half-page or POS thermal print */}
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 4mm 5mm;
+            size: ${receiptFormat === 'thermal' ? '80mm auto' : 'A4 portrait'};
+            margin: ${receiptFormat === 'thermal' ? '0mm' : '4mm 5mm'};
           }
           body {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             overflow: visible !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          .print-hidden-element {
+            display: none !important;
           }
         }
       `}</style>
@@ -669,21 +691,30 @@ export const PrintReceiptModal: React.FC<PrintReceiptModalProps> = ({
             </label>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={handleOpenPrintWindow}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 shadow-2xs cursor-pointer transition-all"
-              title="Open clean standalone printable invoice in new tab"
+              onClick={printPosSlip}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-xs font-bold text-white hover:bg-neutral-800 shadow-2xs cursor-pointer transition-all"
+              title="Directly Print 80mm POS Thermal Slip"
             >
-              <ExternalLink className="h-4 w-4" />
-              <span className="hidden sm:inline">Print Popup / Tab</span>
+              <Printer className="h-4 w-4 text-emerald-400" />
+              <span>Print POS Slip</span>
             </button>
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm cursor-pointer transition-all"
+              onClick={printHalfA4}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm cursor-pointer transition-all"
+              title="Directly Print standard Half-A4 fee challan voucher (2-in-1 School & Student Copies)"
             >
               <Printer className="h-4 w-4" />
-              Print Half-A4 Voucher
+              <span>Print Half-A4 Voucher</span>
+            </button>
+            <button
+              onClick={handleOpenPrintWindow}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-600/40 bg-emerald-50 px-2.5 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 shadow-2xs cursor-pointer transition-all"
+              title="Open clean standalone printable invoice in new tab"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">New Tab</span>
             </button>
             <button
               onClick={onClose}

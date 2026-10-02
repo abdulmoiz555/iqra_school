@@ -18,7 +18,9 @@ import {
   XCircle,
   FileText,
   BadgeAlert,
-  X
+  X,
+  Bus,
+  MapPin
 } from 'lucide-react';
 
 interface StudentsListProps {
@@ -47,6 +49,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     updateSection,
     teachers,
     parents,
+    vehicles,
+    routes,
     currentUser,
     globalSearch,
     setGlobalSearch,
@@ -67,6 +71,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     category: 'Co-Education' as 'Co-Education' | 'Male' | 'Female',
     numericOrder: 1,
     classTeacherId: '',
+    transportVehicleId: '',
+    transportRouteId: '',
   });
 
   // Section Modal state
@@ -87,6 +93,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       category: 'Co-Education',
       numericOrder: classes.length + 1,
       classTeacherId: '',
+      transportVehicleId: vehicles[0]?.id || '',
+      transportRouteId: routes[0]?.id || '',
     });
     setIsClassModalOpen(true);
   };
@@ -98,6 +106,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       category: cls.category || 'Co-Education',
       numericOrder: cls.numericOrder || 1,
       classTeacherId: cls.classTeacherId || '',
+      transportVehicleId: cls.transportVehicleId || '',
+      transportRouteId: cls.transportRouteId || '',
     });
     setIsClassModalOpen(true);
   };
@@ -151,6 +161,12 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   // Filter students
   const filteredStudents = useMemo(() => {
     const q = (localSearch || globalSearch).toLowerCase().trim();
+    const teacherObj = currentUser.role === 'Teacher'
+      ? teachers.find((t) => t.id === currentUser.linkedId || t.email === currentUser.email)
+      : null;
+    const teacherClasses = new Set<string>(teacherObj?.assignedClasses || []);
+    if (teacherObj?.assignedClassId) teacherClasses.add(teacherObj.assignedClassId);
+
     return students.filter((stu) => {
       // Role filtering: Student sees only themselves; Parent sees strictly only their children
       if (currentUser.role === 'Student') {
@@ -164,6 +180,9 @@ export const StudentsList: React.FC<StudentsListProps> = ({
         } else {
           if (stu.parentId !== currentUser.linkedId) return false;
         }
+      }
+      if (currentUser.role === 'Teacher' && teacherClasses.size > 0) {
+        if (!teacherClasses.has(stu.classId)) return false;
       }
 
       if (selectedClass !== 'all' && stu.classId !== selectedClass) return false;
@@ -188,7 +207,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       }
       return true;
     });
-  }, [students, localSearch, globalSearch, selectedClass, selectedSection, selectedCategory, selectedStatus, currentUser, parents]);
+  }, [students, localSearch, globalSearch, selectedClass, selectedSection, selectedCategory, selectedStatus, currentUser, parents, teachers]);
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -235,7 +254,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     }
   };
 
-  const canManage = ['Super Admin', 'Admin', 'Receptionist'].includes(currentUser.role);
+  const canManage = ['Super Admin', 'Admin', 'Academic Admin', 'Admission Admin', 'Receptionist'].includes(currentUser.role);
+  const isStudentOrParent = currentUser.role === 'Student' || currentUser.role === 'Parent';
 
   return (
     <div className="space-y-4">
@@ -243,17 +263,19 @@ export const StudentsList: React.FC<StudentsListProps> = ({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-            {currentUser.role === 'Parent' ? 'My Children Enrolment Records' : 'Student Enrolment Directory'}
+            {currentUser.role === 'Parent' ? 'My Children Enrolment Records' : currentUser.role === 'Student' ? 'My Enrolment Profile' : 'Student Enrolment Directory'}
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
             {currentUser.role === 'Parent'
-              ? 'Official academic profile, roll call status, and ID cards for your enrolled children'
+              ? 'Official academic profile and roll call status for your enrolled children (View-Only)'
+              : currentUser.role === 'Student'
+              ? 'Your official academic enrollment and profile data (View-Only)'
               : 'Manage student admissions, academic profiles, ID cards and class promotions'}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {currentUser.role !== 'Parent' && (
+          {!isStudentOrParent && (
             <button
               onClick={handleExportCSV}
               className="flex items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
@@ -272,6 +294,17 @@ export const StudentsList: React.FC<StudentsListProps> = ({
               >
                 <Plus className="h-3.5 w-3.5 text-blue-600" />
                 Add Class
+              </button>
+              <button
+                onClick={() => {
+                  const targetCls = selectedClass !== 'all' ? classes.find((c) => c.id === selectedClass) : classes[0];
+                  if (targetCls) handleOpenEditClass(targetCls);
+                }}
+                className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50/70 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300 transition-colors cursor-pointer"
+                title="Edit existing class name, category (Co-Ed, Boys, Girls), order, and incharge teacher"
+              >
+                <Edit className="h-3.5 w-3.5 text-amber-600" />
+                Edit Class
               </button>
               <button
                 onClick={handleOpenAddSection}
@@ -555,14 +588,16 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                             <Eye className="h-4 w-4" />
                           </button>
 
-                          {/* ID Card */}
-                          <button
-                            onClick={() => onGenerateIdCard(stu)}
-                            title="Generate Student ID Card"
-                            className="rounded-md p-1.5 text-neutral-600 hover:bg-neutral-100 hover:text-emerald-600 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-emerald-400 cursor-pointer"
-                          >
-                            <CreditCard className="h-4 w-4" />
-                          </button>
+                          {/* ID Card (Admin & Staff Only) */}
+                          {!isStudentOrParent && (
+                            <button
+                              onClick={() => onGenerateIdCard(stu)}
+                              title="Generate Student ID Card"
+                              className="rounded-md p-1.5 text-neutral-600 hover:bg-neutral-100 hover:text-emerald-600 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-emerald-400 cursor-pointer"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                            </button>
+                          )}
 
                           {/* Edit */}
                           {canManage && (
@@ -694,6 +729,46 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                     <option key={t.id} value={t.id}>{t.name} ({t.employeeId})</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Transport Fleet Vehicle & Transit Route Option */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold flex items-center gap-1">
+                    <Bus className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    Transport Fleet Vehicle
+                  </label>
+                  <select
+                    value={classForm.transportVehicleId}
+                    onChange={(e) => setClassForm({ ...classForm, transportVehicleId: e.target.value })}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  >
+                    <option value="">No Fleet Vehicle Assigned</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.vehicleType}: {v.vehicleNumber} ({v.capacity} Seats)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-neutral-700 dark:text-neutral-300 mb-1 font-semibold flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Transport Transit Route
+                  </label>
+                  <select
+                    value={classForm.transportRouteId}
+                    onChange={(e) => setClassForm({ ...classForm, transportRouteId: e.target.value })}
+                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  >
+                    <option value="">No Transit Route Assigned</option>
+                    {routes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} (Rs. {r.fareMonthly}/mo)
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">

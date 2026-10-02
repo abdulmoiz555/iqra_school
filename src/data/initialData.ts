@@ -73,15 +73,15 @@ export const initialSessions: AcademicSession[] = [
 ];
 
 export const initialClasses: SchoolClass[] = [
-  { id: 'cls-1', name: 'Play Group', numericOrder: 1, category: 'Co-Education', classTeacherId: 'tch-5' },
-  { id: 'cls-2', name: 'Nursery', numericOrder: 2, category: 'Co-Education', classTeacherId: 'tch-5' },
-  { id: 'cls-3', name: 'KG', numericOrder: 3, category: 'Co-Education', classTeacherId: 'tch-4' },
-  { id: 'cls-4', name: 'Grade 1', numericOrder: 4, category: 'Co-Education', classTeacherId: 'tch-4' },
-  { id: 'cls-5', name: 'Grade 2', numericOrder: 5, category: 'Co-Education', classTeacherId: 'tch-3' },
-  { id: 'cls-6', name: 'Grade 5', numericOrder: 6, category: 'Male', classTeacherId: 'tch-3' },
-  { id: 'cls-7', name: 'Grade 8', numericOrder: 7, category: 'Female', classTeacherId: 'tch-2' },
-  { id: 'cls-8', name: 'Grade 9', numericOrder: 8, category: 'Male', classTeacherId: 'tch-2' },
-  { id: 'cls-9', name: 'Grade 10', numericOrder: 9, category: 'Co-Education', classTeacherId: 'tch-1' },
+  { id: 'cls-1', name: 'Play Group', numericOrder: 1, category: 'Co-Education', classTeacherId: 'tch-5', transportVehicleId: 'veh-2', transportRouteId: 'rt-2' },
+  { id: 'cls-2', name: 'Nursery', numericOrder: 2, category: 'Co-Education', classTeacherId: 'tch-5', transportVehicleId: 'veh-2', transportRouteId: 'rt-2' },
+  { id: 'cls-3', name: 'KG', numericOrder: 3, category: 'Co-Education', classTeacherId: 'tch-4', transportVehicleId: 'veh-2', transportRouteId: 'rt-2' },
+  { id: 'cls-4', name: 'Grade 1', numericOrder: 4, category: 'Co-Education', classTeacherId: 'tch-4', transportVehicleId: 'veh-1', transportRouteId: 'rt-1' },
+  { id: 'cls-5', name: 'Grade 2', numericOrder: 5, category: 'Co-Education', classTeacherId: 'tch-3', transportVehicleId: 'veh-1', transportRouteId: 'rt-1' },
+  { id: 'cls-6', name: 'Grade 5', numericOrder: 6, category: 'Male', classTeacherId: 'tch-3', transportVehicleId: 'veh-1', transportRouteId: 'rt-1' },
+  { id: 'cls-7', name: 'Grade 8', numericOrder: 7, category: 'Female', classTeacherId: 'tch-2', transportVehicleId: 'veh-1', transportRouteId: 'rt-1' },
+  { id: 'cls-8', name: 'Grade 9', numericOrder: 8, category: 'Male', classTeacherId: 'tch-2', transportVehicleId: 'veh-1', transportRouteId: 'rt-1' },
+  { id: 'cls-9', name: 'Grade 10', numericOrder: 9, category: 'Co-Education', classTeacherId: 'tch-1', transportVehicleId: 'veh-1', transportRouteId: 'rt-1' },
 ];
 
 export const initialSections: Section[] = [

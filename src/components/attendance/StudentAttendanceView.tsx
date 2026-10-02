@@ -60,10 +60,20 @@ export const StudentAttendanceView: React.FC = () => {
   const canControlTeacherAttendance = ['Super Admin', 'Admin', 'Academic Admin', 'Admission Admin'].includes(currentUser.role);
   const canControlAttendance = canControlStudentAttendance;
 
-  // Student list for current selected class and category (Strictly scoped for Parent)
+  const isStudent = currentUser.role === 'Student';
+  const teacherClasses = new Set<string>(currentTeacher?.assignedClasses || []);
+  if (currentTeacher?.assignedClassId) teacherClasses.add(currentTeacher.assignedClassId);
+  const attendanceClasses = currentUser.role === 'Teacher' && teacherClasses.size > 0
+    ? classes.filter((c) => teacherClasses.has(c.id))
+    : classes;
+
+  // Student list for current selected class and category (Strictly scoped for Parent & Student)
   const classStudents = students.filter((s) => {
     if (isParent) {
       return myChildren.some((c) => c.id === s.id);
+    }
+    if (isStudent) {
+      return s.id === currentUser.linkedId;
     }
     if (s.classId !== selectedClassId || s.status !== 'Active') return false;
     if (selectedCategory !== 'all' && (s.category || 'Co-Education') !== selectedCategory) return false;
@@ -322,31 +332,35 @@ export const StudentAttendanceView: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-500 mb-1">Class:</label>
-                  <select
-                    value={selectedClassId}
-                    onChange={(e) => setSelectedClassId(e.target.value)}
-                    className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  >
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+                {!isParent && !isStudent && (
+                  <>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-neutral-500 mb-1">Class:</label>
+                      <select
+                        value={selectedClassId}
+                        onChange={(e) => setSelectedClassId(e.target.value)}
+                        className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                      >
+                        {attendanceClasses.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-500 mb-1">Section:</label>
-                  <select
-                    value={selectedSectionId}
-                    onChange={(e) => setSelectedSectionId(e.target.value)}
-                    className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-                  >
-                    {sections.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-neutral-500 mb-1">Section:</label>
+                      <select
+                        value={selectedSectionId}
+                        onChange={(e) => setSelectedSectionId(e.target.value)}
+                        className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                      >
+                        {sections.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <label className="block text-[11px] font-semibold text-neutral-500 mb-1">Student Category:</label>

@@ -27,8 +27,27 @@ export const ExamsHub: React.FC = () => {
     classes,
     subjects,
     students,
+    parents,
+    teachers,
+    settings,
     currentUser,
   } = useApp();
+
+  const isParent = currentUser.role === 'Parent';
+  const isStudent = currentUser.role === 'Student';
+  const parentRecord = parents.find((p) => p.id === currentUser.linkedId || p.email === currentUser.email);
+  const myChildren = students.filter(
+    (s) => parentRecord?.studentIds?.includes(s.id) || s.parentId === parentRecord?.id
+  );
+
+  const teacherObj = currentUser.role === 'Teacher'
+    ? teachers.find((t) => t.id === currentUser.linkedId || t.email === currentUser.email)
+    : null;
+  const teacherClasses = new Set<string>(teacherObj?.assignedClasses || []);
+  if (teacherObj?.assignedClassId) teacherClasses.add(teacherObj.assignedClassId);
+  const availableClasses = currentUser.role === 'Teacher' && teacherClasses.size > 0
+    ? classes.filter((c) => teacherClasses.has(c.id))
+    : classes;
 
   const [activeTab, setActiveTab] = useState<'entry' | 'exams' | 'grading' | 'results'>('entry');
 
@@ -146,6 +165,158 @@ export const ExamsHub: React.FC = () => {
 
   const canCreateExam = ['Super Admin', 'Admin'].includes(currentUser.role);
   const canMarkStudents = ['Super Admin', 'Admin', 'Teacher'].includes(currentUser.role);
+
+  // =========================================================================
+  // VIEW-ONLY PARENT & STUDENT EXAM MARKS PORTAL
+  // Strictly scoped to their children / own exam results. View-only, no print.
+  // =========================================================================
+  if (isParent || isStudent) {
+    const targetStudents = isParent ? myChildren : students.filter((s) => s.id === currentUser.linkedId);
+
+    return (
+      <div className="space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <Award className="h-5 w-5 text-amber-500" />
+              {isParent ? "Children's Academic Examination Marks & Results" : "My Examination Marks & Academic Results"}
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {isParent
+                ? "Official term examination marks, grades, and academic performance for your enrolled children (View-Only Portal)"
+                : "Your official term assessment marks and grade performance (View-Only Portal)"}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+            View-Only Access
+          </span>
+        </div>
+
+        {targetStudents.length === 0 ? (
+          <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center text-xs text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
+            No student enrollment records associated with your account.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {targetStudents.map((stu) => {
+              const stuClass = classes.find((c) => c.id === stu.classId);
+              const stuSec = sections.find((s) => s.id === stu.sectionId);
+
+              return (
+                <div
+                  key={stu.id}
+                  className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900 space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 flex items-center justify-center font-bold text-xs">
+                        {stu.firstName[0]}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                          {stu.firstName} {stu.lastName}
+                        </h3>
+                        <p className="text-[11px] text-neutral-500 font-mono">
+                          Class: {stuClass?.name || 'Class'} ({stuSec?.name || 'A'}) · Roll #{stu.rollNumber} · Adm #{stu.admissionNumber}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                      {stu.category || 'Co-Education'} Wing
+                    </span>
+                  </div>
+
+                  {/* Exams for this student */}
+                  {exams.map((ex) => {
+                    const stuMarks = marks.filter((m) => m.studentId === stu.id && m.examId === ex.id);
+                    const totalObt = stuMarks.reduce((acc, m) => acc + m.obtainedMarks, 0);
+                    const totalMax = stuMarks.reduce((acc, m) => acc + m.maxMarks, 0) || 1;
+                    const pct = Math.round((totalObt / totalMax) * 100);
+                    const grade = calculateGrade(pct);
+
+                    return (
+                      <div key={ex.id} className="rounded-xl border border-neutral-100 bg-neutral-50/70 p-4 dark:border-neutral-800 dark:bg-neutral-800/40 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                              {ex.type}
+                            </span>
+                            <h4 className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                              {ex.name}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs font-mono font-bold">
+                            <span className="text-neutral-700 dark:text-neutral-300">
+                              Total: {totalObt} / {totalMax} ({pct}%)
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-sm bg-blue-600 text-white text-[11px]">
+                              Grade {grade}
+                            </span>
+                          </div>
+                        </div>
+
+                        {stuMarks.length === 0 ? (
+                          <p className="text-[11px] text-neutral-400 italic">No marks recorded yet for this assessment.</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs bg-white dark:bg-neutral-900 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                              <thead className="bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 font-semibold text-[11px]">
+                                <tr>
+                                  <th className="py-2 px-3">Subject</th>
+                                  <th className="py-2 px-3 font-mono">Max Marks</th>
+                                  <th className="py-2 px-3 font-mono">Passing</th>
+                                  <th className="py-2 px-3 font-mono">Obtained Marks</th>
+                                  <th className="py-2 px-3 font-mono">Subject Grade</th>
+                                  <th className="py-2 px-3">Remarks</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                                {stuMarks.map((m) => {
+                                  const sub = subjects.find((s) => s.id === m.subjectId);
+                                  const subPct = Math.round((m.obtainedMarks / (m.maxMarks || 100)) * 100);
+                                  const subGrade = calculateGrade(subPct);
+                                  const passed = m.obtainedMarks >= (sub?.passingMarks || 33);
+
+                                  return (
+                                    <tr key={m.id}>
+                                      <td className="py-2 px-3 font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {sub?.name || 'Subject'}
+                                      </td>
+                                      <td className="py-2 px-3 font-mono">{m.maxMarks}</td>
+                                      <td className="py-2 px-3 font-mono text-neutral-500">{sub?.passingMarks || 33}</td>
+                                      <td className="py-2 px-3 font-mono font-bold text-neutral-900 dark:text-neutral-100">
+                                        {m.obtainedMarks}
+                                      </td>
+                                      <td className="py-2 px-3">
+                                        <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold font-mono ${
+                                          passed
+                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                        }`}>
+                                          {subGrade} ({passed ? 'Pass' : 'Fail'})
+                                        </span>
+                                      </td>
+                                      <td className="py-2 px-3 text-neutral-500 italic text-[11px]">
+                                        {m.remarks || 'Satisfactory'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
