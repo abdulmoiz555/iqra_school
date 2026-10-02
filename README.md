@@ -1,5 +1,4 @@
-# EduManage Pro — Complete School Management System (SMS)
-
+### 🎓 Complete School Management System (SMS)
 A complete, enterprise-grade, responsive **School Management System (SMS)** engineered for schools, academies, colleges, and educational institutes.
 
 ---
